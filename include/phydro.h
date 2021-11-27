@@ -8,6 +8,7 @@ namespace phydro{
 
 struct PHydroResult{
 	double a;
+	double e;
 	double gs;
 	double ci;
 	double chi;
@@ -37,6 +38,7 @@ inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double
 
 	PHydroResult res;
 	res.a = a;
+	res.e = 1.6*gs*vpd/par_env.patm;
 	res.ci = x*par_photosynth.ca;
 	res.gs = gs;
 	res.chi = x;
@@ -71,6 +73,7 @@ inline PHydroResult phydro_numerical(double tc, double ppfd, double vpd, double 
 
 	PHydroResult res;
 	res.a = aj.a;
+	res.e = 1.6*gs*vpd/par_env.patm;
 	res.ci = aj.ci;
 	res.gs = gs;
 	res.chi = aj.ci/par_photosynth.ca;
