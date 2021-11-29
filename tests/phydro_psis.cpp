@@ -65,7 +65,7 @@ int main(){
 	for (auto psi_soil : seq(-6, 0, 20)){
 
 		auto t1 = std::chrono::high_resolution_clock::now();
-		auto res = phydro::phydro_numerical(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost);
+		auto res = phydro::phydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost);
 		auto t2 = std::chrono::high_resolution_clock::now();
 		time += (std::chrono::duration<double, std::milli> (t2 - t1)).count();
 		

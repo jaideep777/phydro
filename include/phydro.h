@@ -30,9 +30,9 @@ inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double
 	auto   dpsi_opt = pn::zero(bounds.Iabs_bound*0.001, bounds.Iabs_bound*0.999, [&](double dpsi){return dFdx(dpsi, psi_soil, par_plant, par_env, par_photosynth, par_cost).dPdx;}, 1e-6);
 	double        x = calc_x_from_dpsi(dpsi_opt.root, psi_soil, par_plant, par_env, par_photosynth, par_cost);  	
 	double       gs = calc_gs(dpsi_opt.root, psi_soil, par_plant, par_env);
-	double    ajmax = calc_Aj_max(gs, x, par_photosynth);	
-	double     jmax = calc_jmax_from_Ajmax(ajmax, par_photosynth); 
-	double    vcmax = ajmax*(x*par_photosynth.ca + par_photosynth.kmm)/(x*par_photosynth.ca + 2*par_photosynth.gammastar);
+	double        J = calc_J(gs, x, par_photosynth);	
+	double     jmax = calc_jmax_from_J(J, par_photosynth); 
+	double    vcmax = (J/4.0)*(x*par_photosynth.ca + par_photosynth.kmm)/(x*par_photosynth.ca + 2*par_photosynth.gammastar);
 	double        a = gs*(par_photosynth.ca/par_photosynth.patm*1e6)*(1-x);
 
 	PHydroResult res;

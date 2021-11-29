@@ -9,50 +9,49 @@
 
 namespace phydro{
 
-inline double calc_Aj_max(double gs, double x, ParPhotosynth par_photosynth){
+inline double calc_J(double gs, double x, ParPhotosynth par_photosynth){
 	double g = par_photosynth.gammastar / par_photosynth.ca;
 	double k = par_photosynth.kmm / par_photosynth.ca;
 	double ca = par_photosynth.ca / par_photosynth.patm*1e6;
 	double d = par_photosynth.delta;
-	return gs*ca*(1-x)*(x+2*g)/(x*(1-d)-(g+d*k));
+	return 4*gs*ca*(1-x)*(x+2*g)/(x*(1-d)-(g+d*k));
 }
 
 
-inline double calc_jmax_from_Ajmax(double ajmax, ParPhotosynth par_photosynth){
-	double p = par_photosynth.phi0 * par_photosynth.Iabs;
-	double pj = p/ajmax;
-	return 4*p/sqrt(pj*pj-1);
+inline double calc_jmax_from_J(double J, ParPhotosynth par_photosynth){
+	double p = 4*par_photosynth.phi0 * par_photosynth.Iabs;
+	double pj = p/J;
+	return p/sqrt(pj*pj-1);
 }
 
 
-inline double calc_djmax_dAjmax(double ajmax, ParPhotosynth par_photosynth){
-  double p = par_photosynth.phi0 * par_photosynth.Iabs;
-  double pj = p/ajmax;
-  double sq = sqrt(pj*pj-1);
-  double pjsq = pj/sq;
-  return 4*pjsq*pjsq*pjsq;
+inline double calc_djmax_dJ(double J, ParPhotosynth par_photosynth){
+  double p = 4*par_photosynth.phi0 * par_photosynth.Iabs;
+  double sq = sqrt(p*p-J*J);
+  double psq = p/sq;
+  return psq*psq*psq;
   //return 4*p^3/ajmax^3/((p/ajmax)^2-1)^(3/2);
 }
 
 
-inline double calc_dAjmax_dchi(double gs, double x, ParPhotosynth par_photosynth){
+inline double calc_dJ_dchi(double gs, double x, ParPhotosynth par_photosynth){
   double g = par_photosynth.gammastar / par_photosynth.ca;
   double k = par_photosynth.kmm / par_photosynth.ca;
   double ca = par_photosynth.ca / par_photosynth.patm*1e6;
   double d = par_photosynth.delta;
   // gs*ca * ((d*(2*g*(k + 1) + k*(2*x - 1) + x^2) + 2*g^2 + g*(2*x - 3) - x^2)/(d*(k + x) + g - x)^2)
   double D = d*(k + x) + g - x;
-  return gs*ca * ((d*(2*g*(k + 1) + k*(2*x - 1) + x*x) - ((x-g)*(x-g)+3*g*(1-g)))/(D*D));
+  return 4*gs*ca * ((d*(2*g*(k + 1) + k*(2*x - 1) + x*x) - ((x-g)*(x-g)+3*g*(1-g)))/(D*D));
   // gs*ca*(3*(g-1)*g/(g-x)^2 - 1)
 }
 
 
-inline double calc_dAjmax_ddpsi(double gsprime, double x, ParPhotosynth par_photosynth){
+inline double calc_dJ_ddpsi(double gsprime, double x, ParPhotosynth par_photosynth){
   double g = par_photosynth.gammastar/par_photosynth.ca;
   double k = par_photosynth.kmm/par_photosynth.ca;
   double ca = par_photosynth.ca/par_photosynth.patm*1e6;
   double d = par_photosynth.delta;
-  return gsprime*ca*(1-x)*(x+2*g)/(x*(1-d)-(g+d*k));
+  return 4*gsprime*ca*(1-x)*(x+2*g)/(x*(1-d)-(g+d*k));
 }
 
 
@@ -115,8 +114,8 @@ inline DPsiBounds calc_dpsi_bound(double psi_soil, ParPlant par_plant, ParEnv pa
   auto f1 = [&](double dpsi){
 	double gs = calc_gs(dpsi, psi_soil, par_plant, par_env);
 	double x = calc_x_from_dpsi(dpsi,psi_soil,par_plant, par_env, par_photosynth, par_cost);
-	double ajmax=calc_Aj_max(gs, x, par_photosynth)-par_photosynth.phi0*par_photosynth.Iabs;
-	return ajmax;
+	double J=calc_J(gs, x, par_photosynth)-4*par_photosynth.phi0*par_photosynth.Iabs;
+	return J;
   };
   
   double a = (ca + 2*gstar)*K*Pppox*4/8;
@@ -141,10 +140,10 @@ inline DPsiBounds calc_dpsi_bound(double psi_soil, ParPlant par_plant, ParEnv pa
 
 struct DFDX{
 	double dPdx;
-	double ajmax;
-	double djmax_dajmax;
-	double dajmax_dchi;
-	DFDX(double px, double a, double dja, double dax): dPdx(px), ajmax(a), djmax_dajmax(dja), dajmax_dchi(dax) {}
+	double J;
+	double djmax_dJ;
+	double dJ_dchi;
+	DFDX(double _dpdx, double _J, double _djmaxdJ, double _dJdx): dPdx(_dpdx), J(_J), djmax_dJ(_djmaxdJ), dJ_dchi(_dJdx) {}
 };
 
 
@@ -154,20 +153,20 @@ inline DFDX dFdx(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_en
   
   double X =  calc_x_from_dpsi(dpsi, psi_soil, par_plant, par_env, par_photosynth, par_cost);
   
-  double ajmax = calc_Aj_max(gs, X, par_photosynth);
+  double J = calc_J(gs, X, par_photosynth);
   
   double ca = par_photosynth.ca / par_photosynth.patm*1e6;
   double g = par_photosynth.gammastar / par_photosynth.ca;
   
-  double djmax_dajmax = calc_djmax_dAjmax(ajmax, par_photosynth);
-  double dajmax_dchi = calc_dAjmax_dchi(gs, X, par_photosynth);
+  double djmax_dJ = calc_djmax_dJ(J, par_photosynth);
+  double dJ_dchi  = calc_dJ_dchi(gs, X, par_photosynth);
   
-  double dP_dx = -gs*ca - par_cost.alpha * djmax_dajmax * dajmax_dchi;
+  double dP_dx = -gs*ca - par_cost.alpha * djmax_dJ * dJ_dchi;
   
   //# dP_ddpsi = gsprime*ca*(1-X) - par_cost$alpha * calc_djmax_dAjmax(ajmax, par_photosynth) * calc_dAjmax_ddpsi(gsprime, X, par_photosynth) - 2*par_cost$gamma*dpsi #/par_plant$psi50^2
   //# # cat(c(dP_dx, dP_ddpsi), "\n")
   //# c(dP_dx, dP_ddpsi)
-  return DFDX(dP_dx, ajmax, djmax_dajmax, dajmax_dchi);
+  return DFDX(dP_dx, J, djmax_dJ, dJ_dchi);
 }
 
 
