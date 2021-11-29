@@ -47,7 +47,6 @@
 #ifndef PLANT_PN_ZERO_H_
 #define PLANT_PN_ZERO_H_
  
-
 #include <cmath>
 #include <limits>
 
@@ -145,7 +144,6 @@ BrentRes zero(		// An estimate to the root
 }
 
 
-}	// pn 
-
+}	// pn
 
 #endif
