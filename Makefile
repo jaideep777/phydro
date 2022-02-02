@@ -11,12 +11,40 @@ HEADERS := $(wildcard src/*.tpp) $(wildcard include/*.h) $(wildcard tests/*.h)
 #CUDA_INSTALL_PATH ?= /usr/local/cuda#-5.0
 
 # include and lib dirs (esp for cuda)
-INC_PATH := -I./include -I/usr/include/eigen3 -I./LBFGSpp/include #-I./CppNumericalSolvers-1.0.0
+INC_PATH := -I./include -isystem /usr/include/eigen3 -isystem ./LBFGSpp/include #-I./CppNumericalSolvers-1.0.0
 LIB_PATH := -L./lib 
 
 # flags
-CPPFLAGS = -O3 -g -pg -std=c++11 -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable
+CPPFLAGS = -O3 -g -pg -std=c++11 -Wall -Wextra -pedantic
 LDFLAGS =  -g -pg
+
+#CPPFLAGS += -Weffc++ 
+
+#CPPFLAGS +=    \
+#-pedantic-errors  -Wcast-align \
+#-Wcast-qual -Wconversion \
+#-Wdisabled-optimization \
+#-Wformat=2 \
+#-Wformat-nonliteral -Wformat-security  \
+#-Wformat-y2k \
+#-Wimport  -Winit-self   \
+#-Winvalid-pch   \
+#-Wlong-long \
+#-Wmissing-field-initializers -Wmissing-format-attribute   \
+#-Wmissing-include-dirs -Wmissing-noreturn \
+#-Wpacked   -Wpointer-arith \
+#-Wredundant-decls \
+#-Wshadow -Wstack-protector \
+#-Wstrict-aliasing=2 -Wswitch-default \
+#-Wswitch-enum \
+#-Wunreachable-code -Wunused \
+#-Wunused-parameter \
+#-Wvariadic-macros \
+#-Wwrite-strings \
+#-Waggregate-return -Wpadded -Wfloat-equal -Winline
+
+CPPFLAGS += -Wno-unused-variable \
+#-Wno-unused-but-set-variable -Wno-float-conversion
 
 # libs
 LIBS = 	 -lgsl -lgslcblas 	# additional libs

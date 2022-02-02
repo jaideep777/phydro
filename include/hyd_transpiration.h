@@ -1,6 +1,8 @@
 #ifndef PHYDRO_TRANSPIRATION_H
 #define PHYDRO_TRANSPIRATION_H
 
+#include <stdexcept>
+
 #include "pn_integrator.h"
 #include "hyd_params_classes.h"
 //#include <unsupported/Eigen/SpecialFunctions>
@@ -69,6 +71,7 @@ inline double integral_P(double dpsi, double psi_soil, ParPlant par_plant){
 	if (par_plant.gs_method == GS_QNG) return integral_P_numerical( dpsi, psi_soil, par_plant.psi50, par_plant.b);
 	if (par_plant.gs_method == GS_IGF) return integral_P_analytical(dpsi, psi_soil, par_plant.psi50, par_plant.b);
 	if (par_plant.gs_method == GS_APX) return integral_P_approx(    dpsi, psi_soil, par_plant.psi50, par_plant.b);
+	else throw std::runtime_error("Unsupported gs_method specified");
 }
 
 

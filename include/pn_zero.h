@@ -128,9 +128,10 @@ BrentRes zero(		// An estimate to the root
 							// extent			
 		}
 
-		if( fabs(new_step) < tol_act )	// Adjust the step to be not less than tolerance 
+		if( fabs(new_step) < tol_act ){	// Adjust the step to be not less than tolerance 
 			if( new_step > (double)0 ) new_step = tol_act;
 			else new_step = -tol_act;
+		}
 
 		a = b;	fa = fb;			// Save the previous approx.	
 		b += new_step;	fb = f(b);	// Do step to a new approxim.	

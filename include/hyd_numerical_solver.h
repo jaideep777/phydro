@@ -29,8 +29,8 @@ class PHydro_Profit{
 		psi_soil       ( _psi_soil),
 		par_cost       ( _par_cost),
 		par_env        ( _par_env),
-		par_plant      ( _par_plant),
-		par_photosynth ( _par_photosynth) {
+		par_photosynth ( _par_photosynth),
+		par_plant      ( _par_plant) {
 	}
 
 	double value(const VectorXd &x) {
