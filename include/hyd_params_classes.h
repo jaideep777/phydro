@@ -23,7 +23,7 @@ class ParEnv{
 };
 
 
-enum GsMethod{GS_IGF, GS_QNG, GS_APX};
+enum GsMethod{GS_IGF, GS_QNG, GS_APX, GS_APX2};
 
 class ParPlant{
 	public:

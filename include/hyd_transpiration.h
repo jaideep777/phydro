@@ -66,11 +66,16 @@ inline double integral_P_approx(double dpsi, double psi_soil, double psi50, doub
 	return -P(psi_soil-dpsi/2, psi50, b)*dpsi;
 }
 
+inline double integral_P_approx2(double dpsi, double psi_soil, double psi50, double b){
+	return -(P(psi_soil, psi50, b)+P(psi_soil-dpsi, psi50, b))/2 * dpsi;
+}
+
 
 inline double integral_P(double dpsi, double psi_soil, ParPlant par_plant){
-	if (par_plant.gs_method == GS_QNG) return integral_P_numerical( dpsi, psi_soil, par_plant.psi50, par_plant.b);
-	if (par_plant.gs_method == GS_IGF) return integral_P_analytical(dpsi, psi_soil, par_plant.psi50, par_plant.b);
-	if (par_plant.gs_method == GS_APX) return integral_P_approx(    dpsi, psi_soil, par_plant.psi50, par_plant.b);
+	if      (par_plant.gs_method == GS_QNG)  return integral_P_numerical( dpsi, psi_soil, par_plant.psi50, par_plant.b);
+	else if (par_plant.gs_method == GS_IGF)  return integral_P_analytical(dpsi, psi_soil, par_plant.psi50, par_plant.b);
+	else if (par_plant.gs_method == GS_APX)  return integral_P_approx(    dpsi, psi_soil, par_plant.psi50, par_plant.b);
+	else if (par_plant.gs_method == GS_APX2) return integral_P_approx2(   dpsi, psi_soil, par_plant.psi50, par_plant.b);
 	else throw std::runtime_error("Unsupported gs_method specified");
 }
 
@@ -105,10 +110,18 @@ inline double calc_gsprime_approx(double dpsi, double psi_soil, ParPlant par_pla
 	return K/1.6/D*(P(psi_soil-dpsi/2, par_plant.psi50, par_plant.b) - Pprime(psi_soil-dpsi/2, par_plant.psi50, par_plant.b)*dpsi/2);
 }
 
+inline double calc_gsprime_approx2(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+	double K = scale_conductivity(par_plant.conductivity, par_env);
+	double D = (par_env.vpd/par_env.patm);
+	return K/1.6/D* (  (P(psi_soil, par_plant.psi50, par_plant.b)+P(psi_soil-dpsi, par_plant.psi50, par_plant.b))/2 
+	                  - Pprime(psi_soil-dpsi, par_plant.psi50, par_plant.b)*dpsi/2 );
+}
+
 
 inline double calc_gsprime(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
-	if (par_plant.gs_method == GS_APX) return calc_gsprime_approx(dpsi, psi_soil, par_plant, par_env);
-	else                               return calc_gsprime_analytical(dpsi, psi_soil, par_plant, par_env);
+	if      (par_plant.gs_method == GS_APX)  return calc_gsprime_approx(    dpsi, psi_soil, par_plant, par_env);
+	else if (par_plant.gs_method == GS_APX2) return calc_gsprime_approx2(   dpsi, psi_soil, par_plant, par_env);
+	else                                     return calc_gsprime_analytical(dpsi, psi_soil, par_plant, par_env);
 
 }
 

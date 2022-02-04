@@ -49,7 +49,7 @@ int main(){
 
 	double nerr = 0; int count = 0;
 
-	double time_num = 0, time_ana = 0, time_num_apx = 0, time_ana_apx = 0, time_num_qng = 0, time_ana_qng = 0;
+	double time_num = 0, time_ana = 0, time_num_apx = 0, time_ana_apx = 0, time_num_apx2 = 0, time_ana_apx2 = 0, time_num_qng = 0, time_ana_qng = 0;
 	for (auto psi_soil : seq(-6, 0, 1000)){
 
 		par_plant.gs_method = phydro::GS_IGF;
@@ -89,17 +89,32 @@ int main(){
 		phydro::phydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost);
 		auto t8 = std::chrono::high_resolution_clock::now();
 		time_ana_apx += (std::chrono::duration<double, std::micro> (t8 - t7)).count();
+
+		par_plant.gs_method = phydro::GS_APX2;
+		
+		auto t13 = std::chrono::high_resolution_clock::now();
+		phydro::phydro_numerical(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost);
+		auto t14 = std::chrono::high_resolution_clock::now();
+		time_num_apx2 += (std::chrono::duration<double, std::micro> (t14- t13)).count();
+			
+		auto t15 = std::chrono::high_resolution_clock::now();
+		phydro::phydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost);
+		auto t16 = std::chrono::high_resolution_clock::now();
+		time_ana_apx2 += (std::chrono::duration<double, std::micro> (t16 - t15)).count();
+
 	}
 	
-	cout << "               | " << "Analytical  \t Numerical"   << "\n";
-	cout << "---------------+---------------------------------------\n";
-	cout << "Avg time (IGF) | " << time_ana/1000     << " us\t" << time_num/1000     << " us\n";
-	cout << "Avg time (QNG) | " << time_ana_qng/1000 << " us\t" << time_num_qng/1000 << " us\n";
-	cout << "Avg time (APX) | " << time_ana_apx/1000 << " us\t" << time_num_apx/1000 << " us\n";
+	cout << "                | " << "Analytical  \t Numerical"   << "\n";
+	cout << "----------------+---------------------------------------\n";
+	cout << "Avg time (IGF)  | " << time_ana/1000     << " us\t" << time_num/1000      << " us\n";
+	cout << "Avg time (QNG)  | " << time_ana_qng/1000 << " us\t" << time_num_qng/1000  << " us\n";
+	cout << "Avg time (APX)  | " << time_ana_apx/1000 << " us\t" << time_num_apx/1000  << " us\n";
+	cout << "Avg time (APX2) | " << time_ana_apx2/1000 << " us\t" << time_num_apx2/1000 << " us\n";
 	cout << "-------------------------------------------------------\n";
-	cout << "Speedup (IGF) = " << time_num/time_ana << " x\n";
-	cout << "Speedup (QNG) = " << time_num_qng/time_ana_qng << " x\n";
-	cout << "Speedup (APX) = " << time_num_apx/time_ana_apx << " x\n";
+	cout << "Speedup (IGF)  = " << time_num/time_ana          << " x\n";
+	cout << "Speedup (QNG)  = " << time_num_qng/time_ana_qng  << " x\n";
+	cout << "Speedup (APX)  = " << time_num_apx/time_ana_apx  << " x\n";
+	cout << "Speedup (APX2) = " << time_num_apx2/time_ana_apx2 << " x\n";
 	
 	return 0;
 }

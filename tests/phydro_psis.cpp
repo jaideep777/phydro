@@ -47,7 +47,7 @@ int main(){
 	phydro::ParCost par_cost(0.1, 1);
 	phydro::ParPlant par_plant(3e-17, -2, 2);
 
-	//par_plant.gs_method = phydro::GS_APX;
+	//par_plant.gs_method = phydro::GS_APX2;
 
 	cout << setw(10) << "psi_s  " << "\t";
 	cout << setw(10) << "jmax   " << "\t";
