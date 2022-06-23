@@ -11,7 +11,7 @@ HEADERS := $(wildcard src/*.tpp) $(wildcard include/*.h) $(wildcard tests/*.h)
 #CUDA_INSTALL_PATH ?= /usr/local/cuda#-5.0
 
 # include and lib dirs (esp for cuda)
-INC_PATH := -I./include -isystem /usr/include/eigen3 -isystem ./LBFGSpp/include #-I./CppNumericalSolvers-1.0.0
+INC_PATH := -I./inst/include -isystem /usr/include/eigen3 -isystem ./inst/LBFGSpp/include #-I./CppNumericalSolvers-1.0.0
 LIB_PATH := -L./lib 
 
 # flags
