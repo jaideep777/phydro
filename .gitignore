@@ -11,7 +11,7 @@ gprof2dot.py
 
 *~
 
-inst/LBFGSpp
+
 *.cppx
 *.hx
 *.hppx
