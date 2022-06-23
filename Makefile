@@ -3,7 +3,7 @@
 TARGET := 1
 
 # files
-SRCFILES  :=  $(wildcard src/*.cpp) 
+SRCFILES  :=  #$(wildcard src/*.cpp) 
 HEADERS := $(wildcard src/*.tpp) $(wildcard include/*.h) $(wildcard tests/*.h)
 # ------------------------------------------------------------------------------
 

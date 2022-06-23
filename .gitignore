@@ -1,6 +1,6 @@
 vignettes/*
 inst/website
-*Rproj*
+
 *.Rhistory*
 ^plant.Rcheck$
 .Rproj.user
@@ -24,6 +24,7 @@ gprof2dot.py
 *.so
 *.cu_o
 exec_*
+*.dll
 
 *.txt
 *.out
