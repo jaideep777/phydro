@@ -16,6 +16,7 @@ inline double QUADP(double A, double B, double C){
 struct ACi{
 	double a;
 	double ci;
+	bool isVcmaxLimited;
 };
 
 
@@ -32,6 +33,7 @@ inline ACi calc_assim_rubisco_limited(double _gs, double vcmax, ParPhotosynth pa
 	ACi res;
 	res.ci = QUADM(A,B,C);
 	res.a  = gs*(ca-res.ci);
+	res.isVcmaxLimited = true;
 
 	return res;
 
@@ -57,6 +59,7 @@ inline ACi calc_assim_light_limited(double _gs, double jmax, ParPhotosynth par_p
 	ACi res;
 	res.ci = QUADM(A,B,C);
 	res.a  = gs*(ca-res.ci);
+	res.isVcmaxLimited = false;
 
 	return res;
 

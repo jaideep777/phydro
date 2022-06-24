@@ -89,6 +89,77 @@ inline PHydroResult phydro_numerical(double tc, double ppfd, double vpd, double 
 } // phydro
 
 
+
+#include "hyd_instantaneous_solver_numerical.h"
+
+
+namespace phydro{
+
+inline PHydroResult phydro_instantaneous_numerical(double vcmax, double jmax, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1)){
+	
+	double pa = calc_patm(elv);
+
+	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark);
+	ParEnv        par_env(tc, pa, vpd);
+
+	double  dpsi = optimize_shortterm_multi(vcmax, jmax, psi_soil, par_cost, par_photosynth, par_plant, par_env);
+	double    gs = calc_gs(dpsi, psi_soil, par_plant, par_env);
+	auto       A = calc_assimilation_limiting(vcmax, jmax, gs, par_photosynth); 	
+
+	PHydroResult res;
+	res.a = A.a;
+	res.e = 1.6*gs*vpd/par_env.patm;
+	res.ci = A.ci;
+	res.gs = gs;
+	res.chi = A.ci/par_photosynth.ca;
+	res.vcmax = vcmax;
+	res.jmax = jmax;
+	res.dpsi = dpsi;
+	res.psi_l = psi_soil - dpsi;
+
+	return res;
+
+}
+
+} // phydro
+
+
+#include "hyd_instantaneous_solver_analytical.h"
+
+
+namespace phydro{
+
+inline PHydroResult phydro_instantaneous_analytical(double vcmax, double jmax, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1)){
+	
+	double pa = calc_patm(elv);
+
+	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark);
+	ParEnv        par_env(tc, pa, vpd);
+
+	auto dpsi_opt = pn::zero(0, 20, [&](double dpsi){return calc_dP_ddpsi(dpsi, vcmax, jmax, psi_soil, par_plant, par_env, par_photosynth, par_cost);}, 1e-6);
+	double     gs = calc_gs(dpsi_opt.root, psi_soil, par_plant, par_env);
+	auto        A = calc_assimilation_limiting(vcmax, jmax, gs, par_photosynth); 	
+
+	PHydroResult res;
+	res.a = A.a;
+	res.e = 1.6*gs*vpd/par_env.patm;
+	res.ci = A.ci;
+	res.gs = gs;
+	res.chi = A.ci/par_photosynth.ca;
+	res.vcmax = vcmax;
+	res.jmax = jmax;
+	res.dpsi = dpsi_opt.root;
+	res.psi_l = psi_soil - dpsi_opt.root;
+
+	return res;
+
+}
+
+} // phydro
+
+
+
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //       R Interface
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,6 +198,18 @@ inline Rcpp::List rphydro_analytical(double tc, double ppfd, double vpd, double 
 	ParPlant par_plant_cpp(par_plant["conductivity"], par_plant["psi50"], par_plant["b"]);
 	ParCost  par_cost_cpp(par_cost["alpha"], par_cost["gamma"]);
 	return PHydroResult_to_List(phydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant_cpp, par_cost_cpp));
+}
+
+inline Rcpp::List rphydro_instantaneous_numerical(double vcmax, double jmax, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, Rcpp::List par_plant, Rcpp::List par_cost){
+	ParPlant par_plant_cpp(par_plant["conductivity"], par_plant["psi50"], par_plant["b"]);
+	ParCost  par_cost_cpp(par_cost["alpha"], par_cost["gamma"]);
+	return PHydroResult_to_List(phydro_instantaneous_numerical(vcmax, jmax, tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant_cpp, par_cost_cpp));
+}
+
+inline Rcpp::List rphydro_instantaneous_analytical(double vcmax, double jmax, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, Rcpp::List par_plant, Rcpp::List par_cost){
+	ParPlant par_plant_cpp(par_plant["conductivity"], par_plant["psi50"], par_plant["b"]);
+	ParCost  par_cost_cpp(par_cost["alpha"], par_cost["gamma"]);
+	return PHydroResult_to_List(phydro_instantaneous_analytical(vcmax, jmax, tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant_cpp, par_cost_cpp));
 }
 
 

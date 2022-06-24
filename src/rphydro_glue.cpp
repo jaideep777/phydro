@@ -11,6 +11,8 @@ RCPP_MODULE(phydro_module) {
 
 	function("rphydro_numerical", &rphydro_numerical);
 	function("rphydro_analytical", &rphydro_analytical);
+	function("rphydro_instantaneous_numerical", &rphydro_instantaneous_numerical);
+	function("rphydro_instantaneous_analytical", &rphydro_instantaneous_analytical);
 
 	function("calc_kmm", &calc_kmm);
 	function("calc_patm", &calc_patm);
@@ -20,3 +22,4 @@ RCPP_MODULE(phydro_module) {
 }
 
 #endif
+
