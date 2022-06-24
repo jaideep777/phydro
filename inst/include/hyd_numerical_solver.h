@@ -1,7 +1,12 @@
 #ifndef PHYDRO_NUMERICAL_SOLVER_H
 #define PHYDRO_NUMERICAL_SOLVER_H
 
+#ifdef USINGRCPP
+#include <RcppEigen.h>
+#else
 #include <Eigen/Core>
+#endif
+ 
 #include <LBFGSB.h>
 
 #include "hyd_transpiration.h"

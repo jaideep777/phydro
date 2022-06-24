@@ -6,7 +6,11 @@
 #include "pn_integrator.h"
 #include "hyd_params_classes.h"
 //#include <unsupported/Eigen/SpecialFunctions>
+
+// include GSL only if using native C++
+#ifndef USINGRCPP
 #include <gsl/gsl_sf_gamma.h>
+#endif
 
 namespace phydro{
 
@@ -53,12 +57,17 @@ inline double integral_P_numerical(double dpsi, double psi_soil, double psi50, d
 
 // integrate vulnerability curve
 inline double integral_P_analytical(double dpsi, double psi_soil, double psi50, double b){
+#ifndef USINGRCPP
 	double ps = psi_soil/psi50;
 	double pl = (psi_soil-dpsi)/psi50;
 	double l2 = log(2);
 	//double I = -(psi50/b)*pow(l2,-1/b)*b*(Eigen::numext::igammac(1/b, l2*pow(pl,b)) - Eigen::numext::igammac(1/b, l2*pow(ps,b)));
 	double I = -(psi50/b)*pow(l2,-1/b)*(gsl_sf_gamma_inc(1/b, l2*pow(pl,b)) - gsl_sf_gamma_inc(1/b, l2*pow(ps,b)));
 	return I;
+#else
+	// if using R, revert to numerical evaluation as GSL is not available
+	return integral_P_numerical(dpsi, psi_soil, psi50, b);
+#endif
 }
 
 
@@ -109,6 +118,7 @@ inline double calc_gsprime_approx(double dpsi, double psi_soil, ParPlant par_pla
 	double D = (par_env.vpd/par_env.patm);
 	return K/1.6/D*(P(psi_soil-dpsi/2, par_plant.psi50, par_plant.b) - Pprime(psi_soil-dpsi/2, par_plant.psi50, par_plant.b)*dpsi/2);
 }
+
 
 inline double calc_gsprime_approx2(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double K = scale_conductivity(par_plant.conductivity, par_env);
