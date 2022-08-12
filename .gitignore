@@ -1,4 +1,4 @@
-vignettes/*
+.vscode
 inst/website
 
 *.Rhistory*

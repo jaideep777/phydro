@@ -7,53 +7,11 @@ library(gridExtra)
 library(scales)
 library(rphydro)
 
-setwd("~/codes/phydro_cpp/vignettes/")
+setwd("~/codes/phydro/vignettes/")
 # P-model as per Wang et al 2017
 # This needs PPFD in mol/m2/day
 
-pmodel_wang17 = function(tc, ppfd, vpd, co2, elv, fapar, kphio, ...){
-  
-  out_analytical <- rpmodel::rpmodel(
-    tc             = tc,
-    vpd            = vpd,
-    co2            = co2,
-    elv            = elv,
-    kphio          = kphio,
-    beta           = 146,
-    fapar          = fapar,
-    ppfd           = ppfd*1e-6*86400, # p-model requires in mol/m2/day
-    ...
-  )
-  
-  # Convert some outputs to facilitate comparison
-  return(list_modify(out_analytical,
-                     gs = out_analytical$gs/86400*rpmodel::calc_patm(elv), # mol/m2/day/Pa --> mol/m2/s
-                     gpp = out_analytical$gpp/1.03772448,  # gC/m2/day --> umol/m2/s
-                     vcmax = out_analytical$vcmax/0.0864,   # mol/m2/day --> umol/m2/s
-                     jmax = out_analytical$jmax/0.0864   # mol/m2/day --> umol/m2/s
-  )
-  )
-}
-
-# pmodel_calibrate_inst <- function(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark = 0, par_plant, par_cost = NULL, jmax, vcmax, opt_hypothesis = "PM"){
-#   out_hydraulics = pmodel_hydraulics_instantaneous(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost, vcmax = vcmax, jmax=jmax)
-#   
-#   out_analytical = pmodel_wang17(tc, ppfd, vpd, co2, elv, fapar, kphio)
-#   
-#   return(list(out_hydraulics = out_hydraulics,
-#               out_analytical = out_analytical))
-# }
-
-pmodel_calibrate_numerical <- function(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark = 0, par_plant, par_cost = NULL, opt_hypothesis = "PM"){
-  if (is.null(par_cost)) par_cost = list(alpha=0.1, gamma=1)
-  out_hydraulics = rphydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost)
-  
-  out_analytical = pmodel_wang17(tc, ppfd, vpd, co2, elv, fapar, kphio)
-  
-  return(list(out_hydraulics = out_hydraulics,
-              out_analytical = out_analytical))
-}
-
+source("utils.R")
 
 lm_eqn <- function(x,y, s="slope = "){
   m <- lm(y ~ x);
@@ -120,7 +78,7 @@ for (species in spp){
   )
   
   dat1 = tibble(var=exp(seq(log(5),log(5000),length.out=50))) %>%
-    mutate(out = purrr::map(var, ~pmodel_calibrate_numerical(tc = mean(data$T..deg.C.), ppfd = mean(data$Iabs.growth.in.growth.chamber..umol.m.2.s.1.), vpd = ., co2 = mean(data$ca..ppm.), elv = 0, fapar = .99, kphio = 0.087, psi_soil = 0, rdark = 0.02, par_plant = par_plant_now, par_cost = par_cost_now )) ) %>%    
+    mutate(out = purrr::map(var, ~pmodel_calibrate_analytical(tc = mean(data$T..deg.C.), ppfd = mean(data$Iabs.growth.in.growth.chamber..umol.m.2.s.1.), vpd = ., co2 = mean(data$ca..ppm.), elv = 0, fapar = .99, kphio = 0.087, psi_soil = 0, rdark = 0.02, par_plant = par_plant_now, par_cost = par_cost_now )) ) %>%    
     unnest_wider(out) %>%  
     unnest_wider(out_hydraulics, names_sep = "_") %>%  
     unnest_wider(out_analytical, names_sep = "_") 
@@ -189,7 +147,7 @@ p71 = d %>% filter(Species != "Eucalyptus pauciflora") %>% ggplot(mapping = aes(
 p71
 
 
-png(file="vpd_response_7.png", width=650*3, height=300*3, res=300)
+cairo_pdf(filename ="vpd_response_7_cairo.pdf", width=6.50, height=3.00)
 cowplot::plot_grid(p51, p71, labels=LETTERS, label_size = 14, label_x = 0.1, label_colour = "grey50", hjust = -3, align = "hv", rel_widths = 1, ncol=2)
 dev.off()
 
