@@ -18,6 +18,11 @@ struct PHydroResult{
 	double psi_l;
 	double nfnct;
 	double niter;
+	double mc;
+	double mj;
+	double gammastar;
+	double kmm;
+	double vcmax25;
 };
 
 inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1)){
@@ -47,7 +52,11 @@ inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double
 	res.dpsi = dpsi_opt.root;
 	res.psi_l = psi_soil - dpsi_opt.root;
 	res.nfnct = dpsi_opt.nfnct;
-
+	res.mc = (x*par_photosynth.ca - par_photosynth.gammastar) / (x*par_photosynth.ca + par_photosynth.kmm);
+	res.mj = (x*par_photosynth.ca - par_photosynth.gammastar) / (x*par_photosynth.ca + 2*par_photosynth.gammastar);
+	res.gammastar = par_photosynth.gammastar;
+	res.kmm = par_photosynth.kmm;
+	res.vcmax25 = vcmax / calc_ftemp_vcmax_bernacchi(tc);
 	return res;
 
 }
@@ -81,6 +90,11 @@ inline PHydroResult phydro_numerical(double tc, double ppfd, double vpd, double 
 	res.jmax = opt.jmax;
 	res.dpsi = opt.dpsi;
 	res.psi_l = psi_soil - opt.dpsi;
+	res.mc = (aj.ci - par_photosynth.gammastar) / (aj.ci + par_photosynth.kmm);
+	res.mj = (aj.ci - par_photosynth.gammastar) / (aj.ci + 2*par_photosynth.gammastar);
+	res.gammastar = par_photosynth.gammastar;
+	res.kmm = par_photosynth.kmm;
+	res.vcmax25 = vcmax / calc_ftemp_vcmax_bernacchi(tc);
 
 	return res;
 
@@ -116,6 +130,11 @@ inline PHydroResult phydro_instantaneous_numerical(double vcmax, double jmax, do
 	res.jmax = jmax;
 	res.dpsi = dpsi;
 	res.psi_l = psi_soil - dpsi;
+	res.mc = (A.ci - par_photosynth.gammastar) / (A.ci + par_photosynth.kmm);
+	res.mj = (A.ci - par_photosynth.gammastar) / (A.ci + 2*par_photosynth.gammastar);
+	res.gammastar = par_photosynth.gammastar;
+	res.kmm = par_photosynth.kmm;
+	res.vcmax25 = vcmax / calc_ftemp_vcmax_bernacchi(tc);
 
 	return res;
 
@@ -150,6 +169,11 @@ inline PHydroResult phydro_instantaneous_analytical(double vcmax, double jmax, d
 	res.jmax = jmax;
 	res.dpsi = dpsi_opt.root;
 	res.psi_l = psi_soil - dpsi_opt.root;
+	res.mc = (A.ci - par_photosynth.gammastar) / (A.ci + par_photosynth.kmm);
+	res.mj = (A.ci - par_photosynth.gammastar) / (A.ci + 2*par_photosynth.gammastar);
+	res.gammastar = par_photosynth.gammastar;
+	res.kmm = par_photosynth.kmm;
+	res.vcmax25 = vcmax / calc_ftemp_vcmax_bernacchi(tc);
 
 	return res;
 
@@ -183,7 +207,12 @@ inline Rcpp::List PHydroResult_to_List(const phydro::PHydroResult& res){
 	           Named("nfnct") = res.nfnct,
 	           Named("niter") = res.niter,
 	           Named("chi_jmax_lim") = 0,
-	           Named("profit") = 0
+	           Named("profit") = 0,
+	           Named("mc") = res.mc,
+	           Named("mj") = res.mj,
+	           Named("gammastar") = res.gammastar,
+	           Named("kmm") = res.kmm,
+	           Named("vcmax25") = res.vcmax25
 	       );
 }
 

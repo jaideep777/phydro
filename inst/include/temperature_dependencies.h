@@ -164,6 +164,12 @@ inline float calc_ftemp_inst_vcmax(float tcleaf, float tcgrowth, float tcref = 2
   return fv;
 }
 
+inline float calc_ftemp_vcmax_bernacchi(double tc){
+  double dha = 65.33e3;
+  double c = 26.35;
+  double R = 8.31;
+  return exp(c - dha/R/(tc+273.16));
+}
 
 //-----------------------------------------------------------------------
 // arguments:
