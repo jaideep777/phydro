@@ -59,7 +59,7 @@ class ParPhotosynth{
 	double gammastar;
 	double phi0;
 	double ca;
-	double delta;
+	double delta;  // TODO: Replace name with brd / rdark
 
 	double Iabs;
 	double patm;
