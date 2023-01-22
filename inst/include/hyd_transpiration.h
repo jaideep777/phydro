@@ -7,9 +7,10 @@
 #include "hyd_params_classes.h"
 //#include <unsupported/Eigen/SpecialFunctions>
 
-// include GSL only if using native C++
-#ifndef USINGRCPP
+#ifdef USE_GSL_GAMMA
 #include <gsl/gsl_sf_gamma.h>
+#else 
+#include "incgamma.h"
 #endif
 
 namespace phydro{
@@ -56,22 +57,20 @@ inline double integral_P_numerical(double dpsi, double psi_soil, double psi50, d
 
 
 // integrate vulnerability curve
-// int P(p, p50, b) = -(p/b) * (log2)^(-1/b) * G(1/b, (x/p)^b*log2)  <--- G is unnormalized upper incomplete gamma function (GSL impl)
-//                  = -(p/b) * (log2)^(-1/b) * G(1/b) * (1 - I((x/p)^b*log2) <--- I is lower incomplete gamma integral (gammainc impl)
+// int P(p, p50, b) = -(p/b) * (log2)^(-1/b) * G(1/b, (x/p)^b*log2)  <--- G is unnormalized upper incomplete gamma function (GSL and gammainc impl)
+//                  = -(p/b) * (log2)^(-1/b) * G(1/b) * (1 - I((x/p)^b*log2) <--- I is lower incomplete gamma integral (gammad impl)
 //                  = -(p/b) * (log2)^(-1/b) * G(1/b) * (- I((pl/p)^b*log2 + I((ps/p)^b*log2) <--- I is lower incomplete gamma integral
 //                  = +(p/b) * (log2)^(-1/b) * G(1/b) * (  I((pl/p)^b*log2 - I((ps/p)^b*log2) <--- I is lower incomplete gamma integral
 inline double integral_P_analytical(double dpsi, double psi_soil, double psi50, double b){
-#ifndef USINGRCPP
 	double ps = psi_soil/psi50;
 	double pl = (psi_soil-dpsi)/psi50;
 	double l2 = log(2);
-	//double I = -(psi50/b)*pow(l2,-1/b)*b*(Eigen::numext::igammac(1/b, l2*pow(pl,b)) - Eigen::numext::igammac(1/b, l2*pow(ps,b)));
+#ifdef USE_GSL_GAMMA
 	double I = -(psi50/b)*pow(l2,-1/b)*(gsl_sf_gamma_inc(1/b, l2*pow(pl,b)) - gsl_sf_gamma_inc(1/b, l2*pow(ps,b)));
-	return I;
 #else
-	// if using R, revert to numerical evaluation as GSL is not available
-	return integral_P_numerical(dpsi, psi_soil, psi50, b);
+	double I = -(psi50/b)*pow(l2,-1/b)*(gammainc(1/b, l2*pow(pl,b)) - gammainc(1/b, l2*pow(ps,b)));
 #endif
+	return I;
 }
 
 

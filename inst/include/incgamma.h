@@ -1,10 +1,12 @@
+#ifndef MATH_UTILS_GAMMAINC_H_
+#define MATH_UTILS_GAMMAINC_H_
+
 # include <cstdlib>
 # include <iostream>
 # include <iomanip>
 # include <cmath>
 # include <ctime>
-
-using namespace std;
+# include <stdexcept>
 
 //****************************************************************************80
 
@@ -127,33 +129,16 @@ inline double alnorm ( double x, bool upper )
 
   return value;
 }
+
 //****************************************************************************80
 
-inline void gamma_inc_values ( int *n_data, double *a, double *x, double *fx )
+inline double r8_min ( double x, double y )
 
 //****************************************************************************80
 //
 //  Purpose:
 //
-//    GAMMA_INC_VALUES returns some values of the incomplete Gamma function.
-//
-//  Discussion:
-//
-//    The (normalized) incomplete Gamma function P(A,X) is defined as:
-//
-//      PN(A,X) = 1/Gamma(A) * Integral ( 0 <= T <= X ) T**(A-1) * exp(-T) dT.
-//
-//    With this definition, for all A and X,
-//
-//      0 <= PN(A,X) <= 1
-//
-//    and
-//
-//      PN(A,INFINITY) = 1.0
-//
-//    In Mathematica, the function can be evaluated by:
-//
-//      1 - GammaRegularized[A,X]
+//    R8_MIN returns the minimum of two R8's.
 //
 //  Licensing:
 //
@@ -161,133 +146,32 @@ inline void gamma_inc_values ( int *n_data, double *a, double *x, double *fx )
 //
 //  Modified:
 //
-//    20 November 2004
+//    31 August 2004
 //
 //  Author:
 //
 //    John Burkardt
 //
-//  Reference:
-//
-//    Milton Abramowitz, Irene Stegun,
-//    Handbook of Mathematical Functions,
-//    National Bureau of Standards, 1964,
-//    ISBN: 0-486-61272-4,
-//    LC: QA47.A34.
-//
-//    Stephen Wolfram,
-//    The Mathematica Book,
-//    Fourth Edition,
-//    Cambridge University Press, 1999,
-//    ISBN: 0-521-64314-7,
-//    LC: QA76.95.W65.
-//
 //  Parameters:
 //
-//    Input/output, int *N_DATA.  The user sets N_DATA to 0 before the
-//    first call.  On each call, the routine increments N_DATA by 1, and
-//    returns the corresponding data; when there is no more data, the
-//    output value of N_DATA will be 0 again.
+//    Input, double X, Y, the quantities to compare.
 //
-//    Output, double *A, the parameter of the function.
-//
-//    Output, double *X, the argument of the function.
-//
-//    Output, double *FX, the value of the function.
+//    Output, double R8_MIN, the minimum of X and Y.
 //
 {
-# define N_MAX 20
+  double value;
 
-  double a_vec[N_MAX] = { 
-     0.10E+00,  
-     0.10E+00,  
-     0.10E+00,  
-     0.50E+00,  
-     0.50E+00,  
-     0.50E+00,  
-     0.10E+01,  
-     0.10E+01,  
-     0.10E+01,  
-     0.11E+01,  
-     0.11E+01,  
-     0.11E+01,  
-     0.20E+01,  
-     0.20E+01,  
-     0.20E+01,  
-     0.60E+01,  
-     0.60E+01,  
-     0.11E+02,  
-     0.26E+02,  
-     0.41E+02  };
-
-  double fx_vec[N_MAX] = { 
-     0.7382350532339351E+00,  
-     0.9083579897300343E+00,  
-     0.9886559833621947E+00,  
-     0.3014646416966613E+00,  
-     0.7793286380801532E+00,  
-     0.9918490284064973E+00,  
-     0.9516258196404043E-01,  
-     0.6321205588285577E+00,  
-     0.9932620530009145E+00,  
-     0.7205974576054322E-01,  
-     0.5891809618706485E+00,  
-     0.9915368159845525E+00,  
-     0.1018582711118352E-01,
-     0.4421745996289254E+00,
-     0.9927049442755639E+00,
-     0.4202103819530612E-01,  
-     0.9796589705830716E+00,  
-     0.9226039842296429E+00,  
-     0.4470785799755852E+00,  
-     0.7444549220718699E+00 };
-
-  double x_vec[N_MAX] = { 
-     0.30E-01,  
-     0.30E+00,  
-     0.15E+01,  
-     0.75E-01,  
-     0.75E+00,  
-     0.35E+01,  
-     0.10E+00,  
-     0.10E+01,  
-     0.50E+01,  
-     0.10E+00,   
-     0.10E+01,  
-     0.50E+01,  
-     0.15E+00,  
-     0.15E+01,  
-     0.70E+01,  
-     0.25E+01,  
-     0.12E+02,  
-     0.16E+02,  
-     0.25E+02,  
-     0.45E+02 };
-
-  if ( *n_data < 0 )
+  if ( y < x )
   {
-    *n_data = 0;
-  }
-
-  *n_data = *n_data + 1;
-
-  if ( N_MAX < *n_data )
-  {
-    *n_data = 0;
-    *a = 0.0;
-    *x = 0.0;
-    *fx = 0.0;
-  }
+    value = y;
+  } 
   else
   {
-    *a = a_vec[*n_data-1];
-    *x = x_vec[*n_data-1];
-    *fx = fx_vec[*n_data-1];
+    value = x;
   }
-
-  return;
-# undef N_MAX
+  return value;
 }
+
 //****************************************************************************80
 
 inline double gammad ( double x, double p, int *ifault )
@@ -493,98 +377,20 @@ inline double gammad ( double x, double p, int *ifault )
 
   return value;
 }
-//****************************************************************************80
 
-inline double r8_min ( double x, double y )
-
-//****************************************************************************80
-//
-//  Purpose:
-//
-//    R8_MIN returns the minimum of two R8's.
-//
-//  Licensing:
-//
-//    This code is distributed under the GNU LGPL license. 
-//
-//  Modified:
-//
-//    31 August 2004
-//
-//  Author:
-//
-//    John Burkardt
-//
-//  Parameters:
-//
-//    Input, double X, Y, the quantities to compare.
-//
-//    Output, double R8_MIN, the minimum of X and Y.
-//
-{
-  double value;
-
-  if ( y < x )
-  {
-    value = y;
-  } 
-  else
-  {
-    value = x;
-  }
-  return value;
-}
-//****************************************************************************80
-
-inline void timestamp ( )
-
-//****************************************************************************80
-//
-//  Purpose:
-//
-//    TIMESTAMP prints the current YMDHMS date as a time stamp.
-//
-//  Example:
-//
-//    31 May 2001 09:45:54 AM
-//
-//  Licensing:
-//
-//    This code is distributed under the GNU LGPL license. 
-//
-//  Modified:
-//
-//    24 September 2003
-//
-//  Author:
-//
-//    John Burkardt
-//
-//  Parameters:
-//
-//    None
-//
-{
-# define TIME_SIZE 40
-
-  static char time_buffer[TIME_SIZE];
-  const struct tm *tm;
-  time_t now;
-
-  now = time ( NULL );
-  tm = localtime ( &now );
-
-  strftime ( time_buffer, TIME_SIZE, "%d %B %Y %I:%M:%S %p", tm );
-
-  cout << time_buffer << "\n";
-
-  return;
-# undef TIME_SIZE
+// This is equivalent of gsl_sf_gamma_inc(a,x), 
+// computes \Gamma(a,x) = \int_x^\infty{u^{a-1}e^{-u}du}
+inline double gammainc(double a, double x){
+  if(a == 0) throw std::runtime_error("gammainc(): a should be non-zero.");
+  int err = 0;
+  double res_inc = (1-gammad(x,a, &err))*tgamma(a);
+  return res_inc;
 }
 
 
 
 
 
+#endif
 
 
