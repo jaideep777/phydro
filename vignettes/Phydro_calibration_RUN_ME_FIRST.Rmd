@@ -203,7 +203,7 @@ pmodel_wang17 = function(tc, ppfd, vpd, co2, elv, fapar, kphio, ...){
   
   # Convert some outputs to facilitate comparison
   return(list_modify(out_analytical,
-                     gs = out_analytical$gs/86400*rpmodel::calc_patm(elv), # mol/m2/day/Pa --> mol/m2/s
+                     gs = out_analytical$gs/86400*rphydro::calc_patm(elv), # mol/m2/day/Pa --> mol/m2/s
                      gpp = out_analytical$gpp/1.03772448,  # gC/m2/day --> umol/m2/s
                      vcmax = out_analytical$vcmax/0.0864   # mol/m2/day --> umol/m2/s
   )
@@ -228,11 +228,11 @@ get_std_photosythnesis_params = function(){
   elv  <- 0            # m.a.s.l.
   fapar <- 0.7         # fraction
   
-  p = rpmodel::calc_patm(elv)
+  p = rphydro::calc_patm(elv)
   return (list(
-    kmm = rpmodel::calc_kmm(tc, p),  # Why does this use std. atm pressure, and not p(z)?
-    gammastar = rpmodel::calc_gammastar(tc, p),
-    phi0 = kphio*rpmodel::calc_ftemp_kphio(tc),
+    kmm = rphydro::calc_kmm(tc, p),  # Why does this use std. atm pressure, and not p(z)?
+    gammastar = rphydro::calc_gammastar(tc, p),
+    phi0 = kphio*rpmodel::ftemp_kphio(tc),
     Iabs = ppfd*fapar,
     ca = co2*p*1e-6,  # Convert to partial pressure
     patm = p,
@@ -656,33 +656,33 @@ print(traits_vec)
 ```
 
 ```{r}
-datme = read.csv(file = "hydricity.csv")
-
-## Data from Martinez-Vilalta et al 2014 (https://nph.onlinelibrary.wiley.com/doi/abs/10.1111/nph.12912)
-datmm = read.csv(file = "C:/Users/Jaideep/Documents/zotero_data/storage/NXGJVVYW/data.csv")
-
-par(mfrow=c(2,2), mar=c(4,4,0,0))
-
-my_theme = function(){
-  theme_classic()+
-    theme(axis.text=element_text(size=16),
-          axis.title=element_text(size=18),
-          legend.position="none",
-          plot.tag.position = "topleft")
-}
-
-ggplot() + my_theme() + 
-  geom_histogram(data=datmm, aes(x=s..MPa.MPa.1.), alpha=0.4, bins=10, fill="green3") + 
-  geom_histogram(data=datme, aes(x=1-dpsi_slope), fill="grey50", col="black", bins=10, alpha=0.7)+
-  ylab("Number of species")+
-  xlab("Anisohydricity")
-
-ggplot() + my_theme() + 
-  geom_histogram(data=datmm, aes(x=L..MPa.), alpha=0.4, bins=10, fill="green3") + 
-  geom_histogram(data=datme, aes(x=-dpsi_intercept), fill="grey50", col="black", bins=10, alpha=0.7)+
-  ylab("Number of species")+
-  xlab("Leaf water potential\nunder wet conditions")
-
+# datme = read.csv(file = "hydricity.csv")
+# 
+# ## Data from Martinez-Vilalta et al 2014 (https://nph.onlinelibrary.wiley.com/doi/abs/10.1111/nph.12912)
+# datmm = read.csv(file = "C:/Users/Jaideep/Documents/zotero_data/storage/NXGJVVYW/data.csv")
+# 
+# par(mfrow=c(2,2), mar=c(4,4,0,0))
+# 
+# my_theme = function(){
+#   theme_classic()+
+#     theme(axis.text=element_text(size=16),
+#           axis.title=element_text(size=18),
+#           legend.position="none",
+#           plot.tag.position = "topleft")
+# }
+# 
+# ggplot() + my_theme() + 
+#   geom_histogram(data=datmm, aes(x=s..MPa.MPa.1.), alpha=0.4, bins=10, fill="green3") + 
+#   geom_histogram(data=datme, aes(x=1-dpsi_slope), fill="grey50", col="black", bins=10, alpha=0.7)+
+#   ylab("Number of species")+
+#   xlab("Anisohydricity")
+# 
+# ggplot() + my_theme() + 
+#   geom_histogram(data=datmm, aes(x=L..MPa.), alpha=0.4, bins=10, fill="green3") + 
+#   geom_histogram(data=datme, aes(x=-dpsi_intercept), fill="grey50", col="black", bins=10, alpha=0.7)+
+#   ylab("Number of species")+
+#   xlab("Leaf water potential\nunder wet conditions")
+# 
 
 ```
 

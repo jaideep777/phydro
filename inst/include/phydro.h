@@ -3,6 +3,7 @@
 
 
 #include "hyd_analytical_solver.h"
+#include "hyd_instantaneous_solver_analytical.h"
 
 namespace phydro{
 
@@ -61,9 +62,44 @@ inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double
 
 }
 
+inline PHydroResult phydro_instantaneous_analytical(double vcmax, double jmax, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1)){
+	
+	double pa = calc_patm(elv);
+
+	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark);
+	ParEnv        par_env(tc, pa, vpd);
+
+	auto dpsi_opt = pn::zero(0, 20, [&](double dpsi){return calc_dP_ddpsi(dpsi, vcmax, jmax, psi_soil, par_plant, par_env, par_photosynth, par_cost);}, 1e-6);
+	double     gs = calc_gs(dpsi_opt.root, psi_soil, par_plant, par_env);
+	auto        A = calc_assimilation_limiting(vcmax, jmax, gs, par_photosynth); 	
+
+	PHydroResult res;
+	res.a = A.a;
+	res.e = 1.6*gs*vpd/par_env.patm;
+	res.ci = A.ci;
+	res.gs = gs;
+	res.chi = A.ci/par_photosynth.ca;
+	res.vcmax = vcmax;
+	res.jmax = jmax;
+	res.dpsi = dpsi_opt.root;
+	res.psi_l = psi_soil - dpsi_opt.root;
+	res.mc = (A.ci - par_photosynth.gammastar) / (A.ci + par_photosynth.kmm);
+	res.mj = (A.ci - par_photosynth.gammastar) / (A.ci + 2*par_photosynth.gammastar);
+	res.gammastar = par_photosynth.gammastar;
+	res.kmm = par_photosynth.kmm;
+	res.vcmax25 = vcmax / calc_ftemp_vcmax_bernacchi(tc);
+
+	return res;
+
+}
+
 } // phydro
 
+
+#ifndef PHYDRO_ANALYTICAL_ONLY
+
 #include "hyd_numerical_solver.h"
+#include "hyd_instantaneous_solver_numerical.h"
 
 
 namespace phydro{
@@ -100,15 +136,6 @@ inline PHydroResult phydro_numerical(double tc, double ppfd, double vpd, double 
 
 }
 
-} // phydro
-
-
-
-#include "hyd_instantaneous_solver_numerical.h"
-
-
-namespace phydro{
-
 inline PHydroResult phydro_instantaneous_numerical(double vcmax, double jmax, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1)){
 	
 	double pa = calc_patm(elv);
@@ -143,108 +170,7 @@ inline PHydroResult phydro_instantaneous_numerical(double vcmax, double jmax, do
 } // phydro
 
 
-#include "hyd_instantaneous_solver_analytical.h"
+#endif   // PHYDRO_ANALYTICAL_ONLY
 
 
-namespace phydro{
-
-inline PHydroResult phydro_instantaneous_analytical(double vcmax, double jmax, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1)){
-	
-	double pa = calc_patm(elv);
-
-	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark);
-	ParEnv        par_env(tc, pa, vpd);
-
-	auto dpsi_opt = pn::zero(0, 20, [&](double dpsi){return calc_dP_ddpsi(dpsi, vcmax, jmax, psi_soil, par_plant, par_env, par_photosynth, par_cost);}, 1e-6);
-	double     gs = calc_gs(dpsi_opt.root, psi_soil, par_plant, par_env);
-	auto        A = calc_assimilation_limiting(vcmax, jmax, gs, par_photosynth); 	
-
-	PHydroResult res;
-	res.a = A.a;
-	res.e = 1.6*gs*vpd/par_env.patm;
-	res.ci = A.ci;
-	res.gs = gs;
-	res.chi = A.ci/par_photosynth.ca;
-	res.vcmax = vcmax;
-	res.jmax = jmax;
-	res.dpsi = dpsi_opt.root;
-	res.psi_l = psi_soil - dpsi_opt.root;
-	res.mc = (A.ci - par_photosynth.gammastar) / (A.ci + par_photosynth.kmm);
-	res.mj = (A.ci - par_photosynth.gammastar) / (A.ci + 2*par_photosynth.gammastar);
-	res.gammastar = par_photosynth.gammastar;
-	res.kmm = par_photosynth.kmm;
-	res.vcmax25 = vcmax / calc_ftemp_vcmax_bernacchi(tc);
-
-	return res;
-
-}
-
-} // phydro
-
-
-
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//       R Interface
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#ifdef USINGRCPP
-
-#include <Rcpp.h>
-
-namespace phydro{
-
-inline Rcpp::List PHydroResult_to_List(const phydro::PHydroResult& res){
-	return Rcpp::List::create(
-	           Named("a") = res.a,
-	           Named("e") = res.e,
-	           Named("gs") = res.gs,
-	           Named("ci") = res.ci,
-	           Named("chi") = res.chi,
-	           Named("vcmax") = res.vcmax,
-	           Named("jmax") = res.jmax,
-	           Named("dpsi") = res.dpsi,
-	           Named("psi_l") = res.psi_l,
-	           Named("nfnct") = res.nfnct,
-	           Named("niter") = res.niter,
-	           Named("chi_jmax_lim") = 0,
-	           Named("profit") = 0,
-	           Named("mc") = res.mc,
-	           Named("mj") = res.mj,
-	           Named("gammastar") = res.gammastar,
-	           Named("kmm") = res.kmm,
-	           Named("vcmax25") = res.vcmax25
-	       );
-}
-
-
-inline Rcpp::List rphydro_numerical(double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, Rcpp::List par_plant, Rcpp::List par_cost){
-	ParPlant par_plant_cpp(par_plant["conductivity"], par_plant["psi50"], par_plant["b"]);
-	ParCost  par_cost_cpp(par_cost["alpha"], par_cost["gamma"]);
-	return PHydroResult_to_List(phydro_numerical(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant_cpp, par_cost_cpp));
-}
-
-inline Rcpp::List rphydro_analytical(double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, Rcpp::List par_plant, Rcpp::List par_cost){
-	ParPlant par_plant_cpp(par_plant["conductivity"], par_plant["psi50"], par_plant["b"]);
-	ParCost  par_cost_cpp(par_cost["alpha"], par_cost["gamma"]);
-	return PHydroResult_to_List(phydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant_cpp, par_cost_cpp));
-}
-
-inline Rcpp::List rphydro_instantaneous_numerical(double vcmax, double jmax, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, Rcpp::List par_plant, Rcpp::List par_cost){
-	ParPlant par_plant_cpp(par_plant["conductivity"], par_plant["psi50"], par_plant["b"]);
-	ParCost  par_cost_cpp(par_cost["alpha"], par_cost["gamma"]);
-	return PHydroResult_to_List(phydro_instantaneous_numerical(vcmax, jmax, tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant_cpp, par_cost_cpp));
-}
-
-inline Rcpp::List rphydro_instantaneous_analytical(double vcmax, double jmax, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, Rcpp::List par_plant, Rcpp::List par_cost){
-	ParPlant par_plant_cpp(par_plant["conductivity"], par_plant["psi50"], par_plant["b"]);
-	ParCost  par_cost_cpp(par_cost["alpha"], par_cost["gamma"]);
-	return PHydroResult_to_List(phydro_instantaneous_analytical(vcmax, jmax, tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant_cpp, par_cost_cpp));
-}
-
-
-} // phydro namespace
-
-#endif
-
-
-#endif
+#endif  // include guard
