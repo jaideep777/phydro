@@ -61,6 +61,11 @@ class ParPhotosynth{
 	double ca;
 	double delta;  // TODO: Replace name with brd / rdark
 
+	FtempVcmaxJmaxMethod ftemp_vj_method = FV_kattge07;
+	FtempRdMethod        ftemp_rd_method = FR_heskel16;
+	FtempBrMethod        ftemp_br_method = FB_atkin15;
+
+
 	double Iabs;
 	double patm;
 

@@ -2,9 +2,23 @@
 #define PHYDRO_TEMPERATURE_DEPENDENCIES_H
 
 #include <cmath>
-
+#include <string>
+#include <stdexcept>
 
 namespace phydro{
+
+// FIXME: use enum class instead?
+enum FtempVcmaxJmaxMethod{FV_kattge07, 
+                          FV_kumarathunge19, 
+                          FV_leuning02};
+
+enum FtempRdMethod{FR_heskel16, 
+                   FR_arrhenius, 
+                   FR_q10};
+
+enum FtempBrMethod{FB_atkin15, 
+                   FB_kumarathunge19};
+
 
 //-----------------------------------------------------------------------
 // Input:    - float, annual atm. CO2, ppm (co2)
@@ -28,9 +42,10 @@ inline float co2_to_ca(float co2, float patm ){
 //-----------------------------------------------------------------------
 inline float calc_ftemp_arrhenius(float tk, float dha, float tkref = 298.15 ){
 
-  //// Note that the following two forms are equivalent:
-  //// ftemp = exp( dha * (tk - 298.15) / (298.15 * kR * tk) )
-  //// ftemp = exp( dha * (tc - 25.0)/(298.15 * kR * (tc + 273.15)) )
+  // # Note that the following forms are equivalent:
+  // # ftemp = exp( dha * (tk - 298.15) / (298.15 * kR * tk) )
+  // # ftemp = exp( dha * (tc - 25.0)/(298.15 * kR * (tc + 273.15)) )
+  // # ftemp = exp( (dha/kR) * (1/298.15 - 1/tk) )
 
   float kR   = 8.3145;     // Universal gas constant, J/mol/K
 
@@ -73,7 +88,6 @@ inline float calc_kmm(float tc, float patm ) {
 
 
 
-
 //-----------------------------------------------------------------------
 // Input:    - elevation, m (elv)
 // Output:   - float, atmospheric pressure at elevation 'elv', Pa (patm)
@@ -102,8 +116,6 @@ inline float calc_patm(float elv){
 }
 
 
-
-
 //-----------------------------------------------------------------------
 // Input:    float, air temperature, degrees C (tc)
 // Output:   float, gamma-star, Pa (gammastar)
@@ -127,6 +139,192 @@ inline float calc_gammastar(float tc, float patm ) {
 }
 
 
+inline double calc_ftemp_kphio(double tc, bool c4 = false) {
+    double ftemp;
+    
+    if (c4) {
+        ftemp = -0.008 + 0.00375 * tc - 0.58e-4 * tc*tc;
+    } 
+    else {
+        ftemp = 0.352 + 0.022 * tc - 3.4e-4 * tc*tc;
+    }
+    
+    // Avoid negative values
+    if (ftemp < 0.0) {
+        ftemp = 0.0;
+    }
+    
+    return ftemp;
+}
+
+
+//-----------------------------------------------------------------------
+// arguments
+// tcleaf: temperature (degrees C)
+// tref: is 'to' in Nick's set it to 25 C (=298.15 K in other cals)
+//
+// function return variable
+// fv: temperature response factor, relative to 25 deg C.
+//
+// Output:   Factor fv to correct for instantaneous temperature response
+//           of Vcmax or Jmax for:
+//
+//               Vcmax(temp) = fv * Vcmax(25 deg C) 
+//                Jmax(temp) = fv *  Jmax(25 deg C) 
+//
+// Ref:      Pascal Schneider et al. (in prep.) Optimal temperature paper
+//-----------------------------------------------------------------------
+inline double calc_ftemp_inst_vcmax(double tcleaf, double tcgrowth = 1e20, double tcref = 25.0, FtempVcmaxJmaxMethod method_ftemp = FV_kumarathunge19) {
+    double Rgas = 8.3145; // Universal gas constant (J/mol/K)
+    double tkref = tcref + 273.15; // Convert reference temperature to Kelvin
+    double tkleaf = tcleaf + 273.15; // Convert leaf temperature to Kelvin
+    double fv;
+
+    if (method_ftemp == FV_kattge07 || method_ftemp == FV_kumarathunge19) {
+        // Kattge2007 Parametrization
+        double Hd = 200000; // Deactivation energy (J/mol)
+        double Ha = 71513; // Activation energy (J/mol)
+        double a_ent = 668.39; // Offset of entropy vs. temperature relationship from Kattge & Knorr (2007) (J/mol/K)
+        double b_ent = 1.07; // Slope of entropy vs. temperature relationship from Kattge & Knorr (2007) (J/mol/K^2)
+
+        if (method_ftemp == FV_kumarathunge19) {
+            // Kumarathunge2019 Implementation:
+            // local parameters
+            a_ent = 645.13; // Offset of entropy vs. temperature relationship (J/mol/K)
+            b_ent = 0.38; // Slope of entropy vs. temperature relationship (J/mol/K^2)
+            
+            // local variables
+            Ha = 42600 + (1140 * tcgrowth); // Acclimation for vcmax
+        }
+
+        // Calculate entropy following Kattge & Knorr (2007), negative slope and y-axis intersect is when expressed as a function of temperature in degrees Celsius, not Kelvin!
+        double dent = a_ent - (b_ent * tcgrowth);  //  'tcgrowth' corresponds to 'tmean' in Nicks, 'tc25' is 'to' in Nick's
+
+        double fva = calc_ftemp_arrhenius(tkleaf, Ha, tkref);
+        double fvb = (1 + std::exp((tkref * dent - Hd) / (Rgas * tkref))) / (1 + std::exp((tkleaf * dent - Hd) / (Rgas * tkleaf)));
+        fv = fva * fvb;
+    } 
+    else if (method_ftemp == FV_leuning02) {
+        // Ref: Leuning, R. (2002). Temperature dependence of two parameters in a photosynthesis model. Plant, Cell & Environment, 25(9), 1205–1210. https://doi.org/10.1046/j.1365-3040.2002.00898.x
+        // Table 2:
+        double Ha = 73637;
+        double Hd = 149252;
+        double Sv = 486;
+
+        double term_1 = 1 + std::exp((Sv * tkref - Hd) / (Rgas * tkref));
+        double term_3 = 1 + std::exp((Sv * tkleaf - Hd) / (Rgas * tkleaf));
+        double term_2 = std::exp((Ha / (Rgas * tkref)) * (1 - tkref / tkleaf)); // Careful: In Eq. (1) in Leuning et al. (1992), there is a bracket missing in this term!
+
+        fv = term_1 * term_2 / term_3;
+    } 
+    else {
+        throw std::invalid_argument("Invalid method_ftemp:" + method_ftemp);
+    }
+
+    return fv;
+}
+
+
+inline double calc_ftemp_inst_jmax(double tcleaf, double tcgrowth, double tchome = 1e20, double tcref = 25.0, FtempVcmaxJmaxMethod method_ftemp = FV_kumarathunge19) {
+    double Rgas = 8.3145; // Universal gas constant (J/mol/K)
+    double tkref = tcref + 273.15; // Convert reference temperature to Kelvin
+    double tkleaf = tcleaf + 273.15; // Convert leaf temperature to Kelvin
+    double fv;
+
+    if (method_ftemp == FV_kattge07 || method_ftemp == FV_kumarathunge19) {
+        double Hd = 200000; // Deactivation energy (J/mol)
+        double Ha = 49884; // Activation energy (J/mol)
+        double a_ent = 659.70; // Offset of entropy vs. temperature relationship from Kattge & Knorr (2007) (J/mol/K)
+        double b_ent = 0.75; // Slope of entropy vs. temperature relationship from Kattge & Knorr (2007) (J/mol/K^2)
+
+        // Calculate entropy following Kattge & Knorr (2007), negative slope and y-axis intersect is when expressed as a function of temperature in degrees Celsius, not Kelvin!
+        double dent = a_ent - b_ent * tcgrowth;  // 'tcgrowth' corresponds to 'tmean' in Nicks, 'tc25' is 'to' in Nick's
+
+        if (method_ftemp == FV_kumarathunge19) {
+            // Kumarathunge2019 Implementation:
+            // local parameters
+            Ha = 40710; // Activation energy (J/mol)
+            a_ent = 658.77; // Offset of entropy vs. temperature relationship (J/mol/K)
+            b_ent = 0.84; // Slope of entropy vs. temperature relationship (J/mol/K^2)
+            double c_ent = 0.52; // 2nd slope of entropy vs. temperature (J/mol/K^2)
+
+            // Entropy calculation, equations given in Celsius, not in Kelvin
+            dent = a_ent - (b_ent * tchome) - c_ent * (tcgrowth - tchome);
+        }
+
+        double fva = calc_ftemp_arrhenius(tkleaf, Ha, tkref);
+        double fvb = (1 + std::exp((tkref * dent - Hd) / (Rgas * tkref))) / (1 + std::exp((tkleaf * dent - Hd) / (Rgas * tkleaf)));
+        fv = fva * fvb;
+
+    } else if (method_ftemp == FV_leuning02) {
+        // Ref: Leuning, R. (2002). Temperature dependence of two parameters in a photosynthesis model. Plant, Cell & Environment, 25(9), 1205–1210. https://doi.org/10.1046/j.1365-3040.2002.00898.x
+        // Table 2:
+        double Ha = 50300;
+        double Hd = 152044;
+        double Sv = 495;
+
+        double term_1 = 1 + std::exp((Sv * tkref - Hd) / (Rgas * tkref));
+        double term_3 = 1 + std::exp((Sv * tkleaf - Hd) / (Rgas * tkleaf));
+        double term_2 = std::exp((Ha / (Rgas * tkref)) * (1 - tkref / tkleaf)); // Careful: In Eq. (1) in Leuning et al. (1992), there is a bracket missing in this term!
+
+        fv = term_1 * term_2 / term_3;
+    } else {
+        throw std::invalid_argument("Invalid method_ftemp:" + method_ftemp);
+    }
+
+    return fv;
+}
+
+
+// Calculate Temperature scaling (f) factor for Rd,
+// Rd = f * Rd25
+double calc_ftemp_inst_rd(double tc_leaf, FtempRdMethod method_rd_scale = FR_heskel16){//, double tc_growth = 1e20, double q10 = 2) {
+    // Get temperature scaling for Rd:
+
+    double f = 1.0; // Scaling factor for Rd
+
+    if (method_rd_scale == FR_heskel16) {
+        // Heskel et al. (2016) temperature scaling
+        double apar = 0.1012;
+        double bpar = 0.0005;
+        f = std::exp(apar * (tc_leaf - 25.0) - bpar * (tc_leaf*tc_leaf - 25.0*25.0));
+    }
+    else if (method_rd_scale == FR_arrhenius) {
+        // Arrhenius temperature scaling
+        double dha = 20700; // Activation energy taken from Kumarathunge et al. (2019), Table 1, Mature Natural Environment
+        f = calc_ftemp_arrhenius(tc_leaf + 273.15, dha); // Convert temperature to Kelvin and call calc_ftemp_arrh function
+    }
+    else if (method_rd_scale == FR_q10) {
+        // Q10 temperature scaling according to Tjoelker et al. (2001)
+        f = std::pow(3.22 - 0.046 * tc_leaf, (tc_leaf - 25.0)) / 10;
+    }
+    else {
+        throw std::invalid_argument("Invalid method_rd_scale:" + method_rd_scale);
+    }
+
+    return f;
+}
+
+// Ratio of Rd to Vcmax at 25 degC
+// Rd25 = brd25 * Vcmax25 
+double calc_brd25(FtempBrMethod method_rd25 = FB_atkin15, double tc_growth = 25.0) {
+    double rd_to_vcmax;
+
+    if (method_rd25 == FB_atkin15) {
+        rd_to_vcmax = 0.015; // Ratio of Rdark to Vcmax25, Atkin et al., 2015 for C3 herbaceous
+    }
+    else if (method_rd25 == FB_kumarathunge19) {
+        rd_to_vcmax = 0.0360 - 0.0010 * tc_growth; // Acclimated rd_to_vcmax taken from Kumarathunge et al. (2019), Table 1, Mature Natural Environment
+    }
+    else {
+        throw std::invalid_argument("Invalid method_rd25:" + method_rd25);
+    }
+
+    return rd_to_vcmax;
+}
+
+
+
 //-----------------------------------------------------------------------
 // arguments
 // tcleaf: temperature (degrees C)
@@ -142,7 +340,7 @@ inline float calc_gammastar(float tc, float patm ) {
 //
 // Ref:      Wang Han et al. (in prep.)
 //-----------------------------------------------------------------------
-inline float calc_ftemp_inst_vcmax(float tcleaf, float tcgrowth, float tcref = 25.0 ){
+inline float calc_ftemp_inst_vcmax_WangEtAl(float tcleaf, float tcgrowth, float tcref = 25.0 ){
   // loal parameters
   float Ha    = 71513;  // activation energy (J/mol)
   float Hd    = 200000; // deactivation energy (J/mol)
@@ -183,7 +381,7 @@ inline float calc_ftemp_vcmax_bernacchi(double tc){
 //
 // Ref:      Heskel et al. (2016) used by Wang Han et al. (in prep.)
 //-----------------------------------------------------------------------
-inline float calc_ftemp_inst_rd(float tc){
+inline float calc_ftemp_inst_rd_heskel_only(float tc){
   // loal parameters
   float apar = 0.1012;
   float bpar = 0.0005;
@@ -207,34 +405,58 @@ inline float calc_ftemp_inst_rd(float tc){
 // Ref:      F.H. Fisher and O.E Dial, Jr. (1975) Equation of state of 
 //           pure water and sea water, Tech. Rept., Marine Physical 
 //           Laboratory, San Diego, CA.
+// Changelog: 
+//           Refactored to reduce number of multiplications 
+//           - 2023.05.26/Jaideep
 //-----------------------------------------------------------------------
 inline float calc_density_h2o(float tc, float p){
 
   // Calculate lambda, (bar cm^3)/g:
-  float my_lambda = 1788.316 + 
-          21.55053*tc + 
-        -0.4695911*tc*tc + 
-     (3.096363e-3)*tc*tc*tc + 
-    -(7.341182e-6)*tc*tc*tc*tc;
+  // float my_lambda = 1788.316 + 
+  //         21.55053*tc + 
+  //       -0.4695911*tc*tc + 
+  //    (3.096363e-3)*tc*tc*tc + 
+  //   -(7.341182e-6)*tc*tc*tc*tc;
+  float my_lambda = 1788.316 +
+                    tc * (21.55053 +
+                    tc * (-0.4695911 +
+                    tc * (3.096363e-3 -
+                    tc * (7.341182e-6))));
 
   // Calculate po, bar
-  float po = 5918.499 + 
-           58.05267*tc + 
-         -1.1253317*tc*tc + 
-     (6.6123869e-3)*tc*tc*tc + 
-    -(1.4661625e-5)*tc*tc*tc*tc;
+  // float po = 5918.499 + 
+  //          58.05267*tc + 
+  //        -1.1253317*tc*tc + 
+  //    (6.6123869e-3)*tc*tc*tc + 
+  //   -(1.4661625e-5)*tc*tc*tc*tc;
+  float po = 5918.499 +
+            tc * (58.05267 +
+            tc * (-1.1253317 +
+            tc * (6.6123869e-3 -
+            tc * (1.4661625e-5))));
+
 
   // Calculate vinf, cm^3/g
-  float vinf = 0.6980547 +
-    -(7.435626e-4)*tc +
-     (3.704258e-5)*tc*tc +
-    -(6.315724e-7)*tc*tc*tc +
-     (9.829576e-9)*tc*tc*tc*tc +
-   -(1.197269e-10)*tc*tc*tc*tc*tc +
-    (1.005461e-12)*tc*tc*tc*tc*tc*tc +
-   -(5.437898e-15)*tc*tc*tc*tc*tc*tc*tc +
-     (1.69946e-17)*tc*tc*tc*tc*tc*tc*tc*tc +
-   -(2.295063e-20)*tc*tc*tc*tc*tc*tc*tc*tc*tc;
+  // float vinf = 0.6980547 +
+  //   -(7.435626e-4)*tc +
+  //    (3.704258e-5)*tc*tc +
+  //   -(6.315724e-7)*tc*tc*tc +
+  //    (9.829576e-9)*tc*tc*tc*tc +
+  //  -(1.197269e-10)*tc*tc*tc*tc*tc +
+  //   (1.005461e-12)*tc*tc*tc*tc*tc*tc +
+  //  -(5.437898e-15)*tc*tc*tc*tc*tc*tc*tc +
+  //    (1.69946e-17)*tc*tc*tc*tc*tc*tc*tc*tc +
+  //  -(2.295063e-20)*tc*tc*tc*tc*tc*tc*tc*tc*tc;
+  double vinf = 0.6980547 +
+      tc * (-7.435626e-4 +
+      tc * (3.704258e-5 +
+      tc * (-6.315724e-7 +
+      tc * (9.829576e-9 +
+      tc * (-1.197269e-10 +
+      tc * (1.005461e-12 +
+      tc * (-5.437898e-15 +
+      tc * (1.69946e-17 -
+      tc * (2.295063e-20)))))))));
 
   // Convert pressure to bars (1 bar = 100000 Pa)
   float pbar = (1e-5)*p;
@@ -344,17 +566,40 @@ inline float calc_viscosity_h2o_vogel(float tc){
 }
 
 
-//----------------------------------------------------------------
-// Calculates the instantaneous temperature response of the quantum
-// yield efficiency based on Bernacchi et al., 2003 PCE (Equation
-// and parameter values taken from Appendix B)
-//----------------------------------------------------------------
-inline float calc_ftemp_kphio(float tc ){
-	float ftemp = 0.352 + 0.022 * tc - 3.4e-4 * tc * tc;
+double esat(double TdegC, double Pa = 101) {
+    // This function was adopted from the R package 'plantecophys'
+    // Duursma (2015) https://doi.org/10/bkmj.
 
-	return ftemp;
+    // Pa in kPa
+    double a = 611.21;
+    double b = 17.502;
+    double c = 240.97;
+    double f = 1.0007 + 3.46e-8 * Pa * 1000;
+    double esatval = f * a * (std::exp(b * TdegC / (c + TdegC)));
+    return esatval;
 }
 
+
+double VPDairToLeaf(double VPD, double Tair, double Tleaf, double Pa = 101) {
+    // This function was adopted from the R package 'plantecophys'
+    // Duursma (2015) https://doi.org/10/bkmj.
+
+    double e = esat(Tair, Pa) - VPD * 1000;
+    double vpd = esat(Tleaf, Pa) - e;
+
+    return vpd / 1000;
+}
+
+double VPDtoRH(double VPD, double TdegC, double Pa = 101) {
+    // This function was adopted from the R package 'plantecophys'
+    // Duursma (2015) https://doi.org/10/bkmj.
+
+    // VPD and Pa in kPa
+    double esatval = esat(TdegC, Pa);
+    double e = std::max(0.0, esatval - VPD * 1000);
+    double RH = 100 * e / esatval;
+    return RH;
+}
 
 } // phydro
 
