@@ -21,9 +21,6 @@ inline Rcpp::List PHydroResult_to_List(const phydro::PHydroResult& res){
 	           Named("jmax") = res.jmax,
 	           Named("dpsi") = res.dpsi,
 	           Named("psi_l") = res.psi_l,
-	           Named("nfnct") = res.nfnct,
-	           Named("niter") = res.niter,
-	           Named("chi_jmax_lim") = 0,
 	           Named("profit") = 0,
 	           Named("mc") = res.mc,
 	           Named("mj") = res.mj,
@@ -31,7 +28,10 @@ inline Rcpp::List PHydroResult_to_List(const phydro::PHydroResult& res){
 	           Named("kmm") = res.kmm,
 	           Named("vcmax25") = res.vcmax25,
 	           Named("jmax25") = res.jmax25,
-	           Named("rd") = res.rd
+	           Named("rd") = res.rd,
+	           Named("isVcmaxLimited") = res.isVcmaxLimited,
+	           Named("ac") = res.ac,
+	           Named("aj") = res.aj
 	       );
 }
 

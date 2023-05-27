@@ -26,6 +26,9 @@ struct PHydroResult{
 	double vcmax25;
 	double jmax25;
 	double rd;
+	bool   isVcmaxLimited;
+	double ac;
+	double aj;
 };
 
 inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1)){
@@ -63,6 +66,9 @@ inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double
 	res.vcmax25 = vcmax / par_photosynth.fT_vcmax; // calc_ftemp_vcmax_bernacchi(tc);
 	res.jmax25 = jmax / par_photosynth.fT_jmax;
 	res.rd = vcmax * par_photosynth.delta;
+	res.isVcmaxLimited = 0.5; // coordinated
+	res.ac = a;
+	res.aj = a;
 
 	return res;
 
@@ -100,6 +106,9 @@ inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax2
 	res.vcmax25 = vcmax25;
 	res.jmax25 = jmax25;
 	res.rd = vcmax * par_photosynth.delta;
+	res.isVcmaxLimited = A.isVcmaxLimited;
+	res.ac = calc_assim_rubisco_limited(gs, vcmax, par_photosynth).a;
+	res.aj = calc_assim_light_limited(gs, jmax, par_photosynth).a; 	
 
 	return res;
 
@@ -147,6 +156,9 @@ inline PHydroResult phydro_numerical(double tc, double ppfd, double vpd, double 
 	res.vcmax25 = vcmax / par_photosynth.fT_vcmax; // calc_ftemp_vcmax_bernacchi(tc);
 	res.jmax25 = opt.jmax / par_photosynth.fT_jmax;
 	res.rd = vcmax * par_photosynth.delta;
+	res.isVcmaxLimited = 0.5; // coordinated
+	res.ac = aj.a;
+	res.aj = aj.a;
 
 	return res;
 
@@ -184,6 +196,9 @@ inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25
 	res.vcmax25 = vcmax25;
 	res.jmax25 = jmax25;
 	res.rd = vcmax * par_photosynth.delta;
+	res.isVcmaxLimited = A.isVcmaxLimited;
+	res.ac = calc_assim_rubisco_limited(gs, vcmax, par_photosynth).a;
+	res.aj = calc_assim_light_limited(gs, jmax, par_photosynth).a; 	
 
 	return res;
 
