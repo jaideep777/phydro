@@ -1,0 +1,69 @@
+---
+title: "Phydro temperature response"
+author: "Jaideep Joshi"
+date: "2023-05-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(rphydro)
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+```
+
+```{r}
+kphio = 0.087;        # quantum yield efficiency
+ppfd = 300;          # umol/m2/s
+vpd  = 1000;         # Pa
+co2  = 400;          # ppm
+elv  = 0;            # m.a.s.l.
+fapar = 0.7;         # fraction
+rdark = 0.015;
+psi_soil = 0;
+
+par_cost = list(alpha=0.1, gamma=1);
+par_plant = list(conductivity=3e-17, psi50=-2, b=2);
+
+```
+
+## Acclimating response
+
+```{r}
+dat = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost))) %>% unnest_wider(dat)
+```
+
+```{r}
+df.m <- dat %>% select(-niter, -chi_jmax_lim, -profit, -nfnct) %>% melt("tc")
+
+ggplot(df.m, aes(y=value, x=tc)) + 
+  geom_line(col="aquamarine4") + 
+  theme_classic() +
+  theme(strip.background = element_rect(color = "white", size = 1))+
+  facet_wrap(~variable, scales = "free")
+
+```
+
+## Instantaneous response
+
+```{r}
+acc = dat %>% filter(tc == 25)
+
+dat_inst = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_instantaneous_analytical(acc$vcmax25, acc$jmax25, .x, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost))) %>% unnest_wider(dat)
+
+df.m1 <- dat_inst %>% select(-niter, -chi_jmax_lim, -profit, -nfnct) %>% melt("tc")
+
+ggplot(df.m1, aes(y=value, x=tc)) + 
+  geom_line(col="aquamarine4") + 
+  geom_vline(xintercept = 25, col="pink") + 
+  theme_classic() +
+  theme(strip.background = element_rect(color = "white", size = 1))+
+  facet_wrap(~variable, scales = "free")
+
+```
+
