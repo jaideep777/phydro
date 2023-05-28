@@ -31,13 +31,14 @@ struct PHydroResult{
 	double aj;
 };
 
-inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1)){
+inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);
 
-	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark);
+	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd);
 	par_cost.alpha /= par_photosynth.fT_jmax; // temperature (in)dependence of alpha
+	par_plant.gs_method = par_control.gs_method;
 
 	auto     bounds = calc_dpsi_bound(psi_soil, par_plant, par_env, par_photosynth, par_cost);
 	auto   dpsi_opt = pn::zero(bounds.Iabs_bound*0.001, bounds.Iabs_bound*0.999, [&](double dpsi){return dFdx(dpsi, psi_soil, par_plant, par_env, par_photosynth, par_cost).dPdx;}, 1e-6);
@@ -74,13 +75,14 @@ inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double
 
 }
 
-inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax25, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1)){
+inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax25, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);
 
-	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark);
+	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd);
 	par_cost.alpha /= par_photosynth.fT_jmax; // temperature (in)dependence of alpha
+	par_plant.gs_method = par_control.gs_method;
 
 	double vcmax = vcmax25 * par_photosynth.fT_vcmax;
 	double jmax  =  jmax25 * par_photosynth.fT_jmax;
@@ -125,13 +127,14 @@ inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax2
 
 namespace phydro{
 
-inline PHydroResult phydro_numerical(double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1)){
+inline PHydroResult phydro_numerical(double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);
 
-	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark);
+	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd);
 	par_cost.alpha /= par_photosynth.fT_jmax; // temperature (in)dependence of alpha
+	par_plant.gs_method = par_control.gs_method;
 
 	auto     opt = optimize_midterm_multi(psi_soil, par_cost, par_photosynth, par_plant, par_env);
 	double    gs = calc_gs(opt.dpsi, psi_soil, par_plant, par_env);
@@ -164,13 +167,14 @@ inline PHydroResult phydro_numerical(double tc, double ppfd, double vpd, double 
 
 }
 
-inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1)){
+inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);
 
-	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark);
+	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd);
 	par_cost.alpha /= par_photosynth.fT_jmax; // temperature (in)dependence of alpha
+	par_plant.gs_method = par_control.gs_method;
 
 	double vcmax = vcmax25 * par_photosynth.fT_vcmax;
 	double jmax  =  jmax25 * par_photosynth.fT_jmax;

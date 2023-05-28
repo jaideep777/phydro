@@ -4,6 +4,7 @@
 #include <cmath>
 #include <string>
 #include <stdexcept>
+#include <unordered_map>
 
 namespace phydro{
 
