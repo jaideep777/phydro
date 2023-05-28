@@ -1,0 +1,109 @@
+---
+title: "Phydro soil moisture response"
+author: "Jaideep Joshi"
+date: "2023-05-27"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(rphydro)
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+```
+
+```{r}
+kphio = 0.087;        # quantum yield efficiency
+ppfd = 300;          # umol/m2/s
+vpd  = 1000;         # Pa
+co2  = 400;          # ppm
+elv  = 0;            # m.a.s.l.
+fapar = 0.7;         # fraction
+rdark = 0.015;
+tc = 25;
+
+par_cost = list(alpha=0.1, gamma=1);
+par_plant = list(conductivity=3e-17, psi50=-2, b=2);
+options = list(gs_method = "GS_IGF", 
+               et_method = "ET_DIFFUSION",
+               ftemp_vj_method = "FV_kumarathunge19",
+               ftemp_rd_method = "FR_heskel16",
+               ftemp_br_method = "FB_atkin15")
+```
+
+## Acclimating response
+
+```{r}
+dat = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, .x, rdark, par_plant, par_cost, options))) %>% unnest_wider(dat)
+```
+
+```{r}
+df.m <- dat %>% select(-profit) %>% melt("psi_soil")
+
+ggplot(df.m, aes(y=value, x=psi_soil)) + 
+  geom_line(col="aquamarine4") + 
+  theme_classic() +
+  theme(strip.background = element_rect(color = "white", size = 1))+
+  facet_wrap(~variable, scales = "free")
+
+```
+
+## Instantaneous response
+
+```{r}
+acc = dat %>% filter(psi_soil == 0)
+
+dat_inst = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_instantaneous_analytical(acc$vcmax25, acc$jmax25, tc, ppfd, vpd, co2, elv, fapar, kphio, .x, rdark, par_plant, par_cost, options))) %>% unnest_wider(dat)
+
+df.m1 <- dat_inst %>% select(-profit) %>% melt("psi_soil")
+
+ggplot(df.m1, aes(y=value, x=psi_soil)) + 
+  geom_line(col="aquamarine4") + 
+  geom_vline(xintercept = 0, col="pink") + 
+  theme_classic() +
+  theme(strip.background = element_rect(color = "white", size = 1))+
+  facet_wrap(~variable, scales = "free")
+
+```
+
+
+### Compare ac, aj, in inst responses
+
+```{r}
+dat_inst %>% select(ac, aj, isVcmaxLimited) %>% mutate(isVcmaxLimited = isVcmaxLimited*5) %>%  matplot(x=dat_inst$psi_soil, type="l", lty=1, col=c("green4", "yellow3", "black"))
+abline(v=0, col="pink")
+```
+
+## Use approx gs calculation
+
+```{r}
+dat_apx = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, .x, rdark, par_plant, par_cost, list_modify(options, gs_method = "GS_APX2")))) %>% unnest_wider(dat)
+```
+
+```{r}
+df.m2 <- dat_apx %>% select(-profit) %>% melt("psi_soil")
+
+ggplot(df.m2, aes(y=value, x=psi_soil)) + 
+  geom_line(col="aquamarine4") + 
+  theme_classic() +
+  theme(strip.background = element_rect(color = "white", size = 1))+
+  facet_wrap(~variable, scales = "free")
+
+```
+
+
+
+### Compare GS_IGF and GS_APX
+
+
+```{r}
+cbind(dat$dpsi, dat_apx$dpsi) %>% matplot(x=dat$psi_soil, type="l", col=c("black", "cyan2"), lty=1, lwd=c(2,1))
+```
+
