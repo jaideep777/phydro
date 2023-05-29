@@ -171,6 +171,20 @@ RCPP_MODULE(phydro_module) {
 	// function("calc_ftemp_inst_jmax", &calc_ftemp_inst_jmax);
 	// function("calc_ftemp_inst_rd", &calc_ftemp_inst_rd);
 
+	// pml functions
+	function("calc_esat", &calc_esat);
+	function("calc_g_aero", &calc_g_aero);
+	function("calc_density_air", &calc_density_air);
+	function("calc_enthalpy_vap", &calc_enthalpy_vap);
+	function("calc_cp_moist_air", &calc_cp_moist_air);
+	function("calc_psychro", &calc_psychro);
+	function("calc_sat_slope", &calc_sat_slope);
+	function("calc_transpiration_pml", &calc_transpiration_pml);
+	function("calc_gs_pml", &calc_gs_pml);
+	function("calc_dE_dgs_pml", &calc_dE_dgs_pml);
+	function("calc_dE_dgs_pml_num", &calc_dE_dgs_pml_num);
+
+
 	// Phydro core
 	function("rphydro_analytical", &rphydro_analytical);
 	function("rphydro_instantaneous_analytical", &rphydro_instantaneous_analytical);

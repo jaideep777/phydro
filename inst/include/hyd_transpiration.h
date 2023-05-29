@@ -5,6 +5,7 @@
 
 #include "pn_integrator.h"
 #include "hyd_params_classes.h"
+#include "hyd_pml.h"
 //#include <unsupported/Eigen/SpecialFunctions>
 
 #ifdef USE_GSL_GAMMA
@@ -146,18 +147,21 @@ inline double calc_Qprime(double dpsi, double psi_soil, ParPlant par_plant, ParE
 }
 
 
+// derivate of E wrt gs
+inline double calc_dE_dgs(ParEnv par_env){
+	double D = (par_env.vpd/par_env.patm);
+	if (par_env.et_method == ET_DIFFUSION){
+		return 1.6*D;
+	}
+	else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
+}
+
 // Derivative of gs wrt dpsi, dgs/ddpsi
 inline double calc_gsprime(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double Qprime = calc_Qprime(dpsi, psi_soil, par_plant, par_env);
-	double D = (par_env.vpd/par_env.patm);
+	double Eprime = calc_dE_dgs(par_env);
 
-	double gsprime;
-	if (par_env.et_method == ET_DIFFUSION){
-		gsprime = Qprime/1.6/D;
-	}
-	else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
-
-	return gsprime;
+	return Qprime / Eprime;
 }
 
 } // phydro

@@ -567,40 +567,40 @@ inline float calc_viscosity_h2o_vogel(float tc){
 }
 
 
-double esat(double TdegC, double Pa = 101) {
-    // This function was adopted from the R package 'plantecophys'
-    // Duursma (2015) https://doi.org/10/bkmj.
+// double esat(double TdegC, double Pa = 101) {
+//     // This function was adopted from the R package 'plantecophys'
+//     // Duursma (2015) https://doi.org/10/bkmj.
 
-    // Pa in kPa
-    double a = 611.21;
-    double b = 17.502;
-    double c = 240.97;
-    double f = 1.0007 + 3.46e-8 * Pa * 1000;
-    double esatval = f * a * (std::exp(b * TdegC / (c + TdegC)));
-    return esatval;
-}
+//     // Pa in kPa
+//     double a = 611.21;
+//     double b = 17.502;
+//     double c = 240.97;
+//     double f = 1.0007 + 3.46e-8 * Pa * 1000;
+//     double esatval = f * a * (std::exp(b * TdegC / (c + TdegC)));
+//     return esatval;
+// }
 
 
-double VPDairToLeaf(double VPD, double Tair, double Tleaf, double Pa = 101) {
-    // This function was adopted from the R package 'plantecophys'
-    // Duursma (2015) https://doi.org/10/bkmj.
+// double VPDairToLeaf(double VPD, double Tair, double Tleaf, double Pa = 101) {
+//     // This function was adopted from the R package 'plantecophys'
+//     // Duursma (2015) https://doi.org/10/bkmj.
 
-    double e = esat(Tair, Pa) - VPD * 1000;
-    double vpd = esat(Tleaf, Pa) - e;
+//     double e = esat(Tair, Pa) - VPD * 1000;
+//     double vpd = esat(Tleaf, Pa) - e;
 
-    return vpd / 1000;
-}
+//     return vpd / 1000;
+// }
 
-double VPDtoRH(double VPD, double TdegC, double Pa = 101) {
-    // This function was adopted from the R package 'plantecophys'
-    // Duursma (2015) https://doi.org/10/bkmj.
+// double VPDtoRH(double VPD, double TdegC, double Pa = 101) {
+//     // This function was adopted from the R package 'plantecophys'
+//     // Duursma (2015) https://doi.org/10/bkmj.
 
-    // VPD and Pa in kPa
-    double esatval = esat(TdegC, Pa);
-    double e = std::max(0.0, esatval - VPD * 1000);
-    double RH = 100 * e / esatval;
-    return RH;
-}
+//     // VPD and Pa in kPa
+//     double esatval = esat(TdegC, Pa);
+//     double e = std::max(0.0, esatval - VPD * 1000);
+//     double RH = 100 * e / esatval;
+//     return RH;
+// }
 
 } // phydro
 
