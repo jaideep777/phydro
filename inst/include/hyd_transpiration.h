@@ -78,6 +78,7 @@ inline double integral_P_approx(double dpsi, double psi_soil, double psi50, doub
 	return -P(psi_soil-dpsi/2, psi50, b)*dpsi;
 }
 
+
 inline double integral_P_approx2(double dpsi, double psi_soil, double psi50, double b){
 	return -(P(psi_soil, psi50, b)+P(psi_soil-dpsi, psi50, b))/2 * dpsi;
 }
@@ -135,15 +136,19 @@ inline double calc_Qprime_approx2(double dpsi, double psi_soil, ParPlant par_pla
 }
 
 
+// Derivative of sapflux wrt dpsi, dQ/ddpsi
+inline double calc_Qprime(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+	if      (par_plant.gs_method == GS_APX)  return calc_Qprime_approx(    dpsi, psi_soil, par_plant, par_env);
+	else if (par_plant.gs_method == GS_APX2) return calc_Qprime_approx2(   dpsi, psi_soil, par_plant, par_env);
+	else if (par_plant.gs_method == GS_IGF)  return calc_Qprime_analytical(dpsi, psi_soil, par_plant, par_env);
+	else if (par_plant.gs_method == GS_QNG)  return calc_Qprime_analytical(dpsi, psi_soil, par_plant, par_env);
+	else throw std::runtime_error("Unsupported gs_method specified");
+}
+
+
 // Derivative of gs wrt dpsi, dgs/ddpsi
 inline double calc_gsprime(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
-	double Qprime;
-	if      (par_plant.gs_method == GS_APX)  Qprime = calc_Qprime_approx(    dpsi, psi_soil, par_plant, par_env);
-	else if (par_plant.gs_method == GS_APX2) Qprime = calc_Qprime_approx2(   dpsi, psi_soil, par_plant, par_env);
-	else if (par_plant.gs_method == GS_IGF)  Qprime = calc_Qprime_analytical(dpsi, psi_soil, par_plant, par_env);
-	else if (par_plant.gs_method == GS_QNG)  Qprime = calc_Qprime_analytical(dpsi, psi_soil, par_plant, par_env);
-	else throw std::runtime_error("Unsupported gs_method specified");
-
+	double Qprime = calc_Qprime(dpsi, psi_soil, par_plant, par_env);
 	double D = (par_env.vpd/par_env.patm);
 
 	double gsprime;
