@@ -18,6 +18,9 @@ class ParEnv{
 	double viscosity_water;
 	double density_water;
 
+	GsMethod gs_method = GS_IGF;
+	ETMethod et_method = ET_DIFFUSION;
+
 	ParEnv(double _tc, double _patm, double _vpd){
 		tc = _tc;
 		vpd = _vpd;
@@ -34,8 +37,6 @@ class ParPlant{
 	double psi50;
 	double b;
 	
-	GsMethod gs_method = GS_IGF;
-
 	ParPlant(double _conductivity, double _psi50, double _b){
 		conductivity = _conductivity;
 		psi50 = _psi50;
