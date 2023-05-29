@@ -92,7 +92,7 @@ inline double integral_P(double dpsi, double psi_soil, ParPlant par_plant){
 }
 
 
-inline double calc_transpiration(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+inline double calc_sapflux(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double K = scale_conductivity(par_plant.conductivity, par_env);
 	double E = K * -integral_P(dpsi, psi_soil, par_plant);
 	return E;
@@ -102,40 +102,57 @@ inline double calc_transpiration(double dpsi, double psi_soil, ParPlant par_plan
 // Calculates regulated stomatal conducatnce given the leaf water potential, 
 // plant hydraulic traits, and the environment.
 inline double calc_gs(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
-	double E = calc_transpiration(dpsi, psi_soil, par_plant, par_env);
+	double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
 	double D = (par_env.vpd/par_env.patm);
-	double gs = E/1.6/D; 
+
+	double gs;
+	if (true){ // (par_env.et_method == ET_DIFFUSION){
+		gs = Q/1.6/D; 
+	}
+	// else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
+
 	return gs;
 }
 
 
-inline double calc_gsprime_analytical(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+// Derivative of sapflux wrt dpsi, dQ/ddpsi
+inline double calc_Qprime_analytical(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double K = scale_conductivity(par_plant.conductivity, par_env);
-	double D = (par_env.vpd/par_env.patm);
-	return K/1.6/D*P(psi_soil-dpsi, par_plant.psi50, par_plant.b);
+	return K*P(psi_soil-dpsi, par_plant.psi50, par_plant.b);
 }
 
 
-inline double calc_gsprime_approx(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+inline double calc_Qprime_approx(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double K = scale_conductivity(par_plant.conductivity, par_env);
-	double D = (par_env.vpd/par_env.patm);
-	return K/1.6/D*(P(psi_soil-dpsi/2, par_plant.psi50, par_plant.b) - Pprime(psi_soil-dpsi/2, par_plant.psi50, par_plant.b)*dpsi/2);
+	return K*(P(psi_soil-dpsi/2, par_plant.psi50, par_plant.b) - Pprime(psi_soil-dpsi/2, par_plant.psi50, par_plant.b)*dpsi/2);
 }
 
 
-inline double calc_gsprime_approx2(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+inline double calc_Qprime_approx2(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double K = scale_conductivity(par_plant.conductivity, par_env);
-	double D = (par_env.vpd/par_env.patm);
-	return K/1.6/D* (  (P(psi_soil, par_plant.psi50, par_plant.b)+P(psi_soil-dpsi, par_plant.psi50, par_plant.b))/2 
-	                  - Pprime(psi_soil-dpsi, par_plant.psi50, par_plant.b)*dpsi/2 );
+	return K* (  (P(psi_soil, par_plant.psi50, par_plant.b)+P(psi_soil-dpsi, par_plant.psi50, par_plant.b))/2 
+	            - Pprime(psi_soil-dpsi, par_plant.psi50, par_plant.b)*dpsi/2 );
 }
 
 
+// Derivative of gs wrt dpsi, dgs/ddpsi
 inline double calc_gsprime(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
-	if      (par_plant.gs_method == GS_APX)  return calc_gsprime_approx(    dpsi, psi_soil, par_plant, par_env);
-	else if (par_plant.gs_method == GS_APX2) return calc_gsprime_approx2(   dpsi, psi_soil, par_plant, par_env);
-	else                                     return calc_gsprime_analytical(dpsi, psi_soil, par_plant, par_env);
+	double Qprime;
+	if      (par_plant.gs_method == GS_APX)  Qprime = calc_Qprime_approx(    dpsi, psi_soil, par_plant, par_env);
+	else if (par_plant.gs_method == GS_APX2) Qprime = calc_Qprime_approx2(   dpsi, psi_soil, par_plant, par_env);
+	else if (par_plant.gs_method == GS_IGF)  Qprime = calc_Qprime_analytical(dpsi, psi_soil, par_plant, par_env);
+	else if (par_plant.gs_method == GS_QNG)  Qprime = calc_Qprime_analytical(dpsi, psi_soil, par_plant, par_env);
+	else throw std::runtime_error("Unsupported gs_method specified");
 
+	double D = (par_env.vpd/par_env.patm);
+
+	double gsprime;
+	if (true){ // (par_env.et_method == ET_DIFFUSION){
+		gsprime = Qprime/1.6/D;
+	}
+	// else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
+
+	return gsprime;
 }
 
 } // phydro
