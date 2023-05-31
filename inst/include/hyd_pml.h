@@ -130,46 +130,83 @@ inline double calc_sat_slope(double tc){
 }
 
 
-
-inline double calc_transpiration_pml(double Iabs, double gs, double ga, double tc, double patm, double vpd){
+// Calculate PML transpiration [mol m-2 s-1]
+// gs   Stomatal conductance to CO2 [mol m-2 s-1]
+// ga   Aerodynamic conductance [m s-1]
+// Rn   Absorbed net radiation [W m-2]
+inline double calc_transpiration_pml(double Rn, double gs, double ga, double tc, double patm, double vpd){
 	double rho = calc_density_air(tc, patm, vpd, true);
 	double cp = calc_cp_moist_air(tc);
 	double gamma = calc_psychro(tc, patm);
 	double epsilon = calc_sat_slope(tc) / gamma;
 
-	double trans = (epsilon*Iabs + (rho*cp/gamma)*ga*vpd) / (epsilon + 1 + ga/gs);
+	double lv = calc_enthalpy_vap(tc);
+
+	double R = 8.31446261815324; // Universal gas constant [J mol-1 K-1]
+
+	// PV = nRT, so RT/P = V/n ~ [m3 mol-1]
+	// convert gs from [mol m-2 s-1] to [m s-1]
+	double gw = (1.6*gs)*R*(tc+273.16)/patm;  // 1.6 converts conductance from CO2 to H2O
+
+	double latent_energy = (epsilon*Rn + (rho*cp/gamma)*ga*vpd) / (epsilon + 1 + ga/gw); // latent energy W m-2 
+	double trans = latent_energy * 55.5 / lv; // W m-2 ---> mol m-2 s-1
 	return trans;
 }
 
 
-inline double calc_gs_pml(double Iabs, double Q, double ga, double tc, double patm, double vpd){
+// Calculate PML stomatal conductance to CO2 [mol m-2 s-1]
+// Q    Sap flux [mol m-2 s-1]
+// ga   Aerodynamic conductance [m s-1]
+// Rn   Absorbed net radiation [W m-2]
+inline double calc_gs_pml(double Rn, double Q, double ga, double tc, double patm, double vpd){
 	double rho = calc_density_air(tc, patm, vpd, true);
 	double cp = calc_cp_moist_air(tc);
 	double gamma = calc_psychro(tc, patm);
 	double epsilon = calc_sat_slope(tc) / gamma;
 
-	double den = epsilon*Iabs + (rho*cp/gamma)*ga*vpd - (1+epsilon)*Q; 
-	double gs = ga * Q / den;
+	double R = 8.31446261815324; // Universal gas constant [J mol-1 K-1]
+
+	double lv = calc_enthalpy_vap(tc);
+
+	double Q_energy = Q * lv/55.5;
+
+	double den = epsilon*Rn + (rho*cp/gamma)*ga*vpd - (1+epsilon)*Q_energy; 
+	double gw = ga * Q_energy / den; // stomatal conductance to water [m s-1]
+
+	double gs = gw * patm / (R*(tc+273.16)*1.6); // stomatal conductance to CO2 [mol m-2 s-1]
+
 	return gs;
 }
 
 
-inline double calc_dE_dgs_pml(double Iabs, double gs, double ga, double tc, double patm, double vpd){
+inline double calc_dE_dgs_pml(double Rn, double gs, double ga, double tc, double patm, double vpd){
 	double rho = calc_density_air(tc, patm, vpd, true);
 	double cp = calc_cp_moist_air(tc);
 	double gamma = calc_psychro(tc, patm);
 	double epsilon = calc_sat_slope(tc) / gamma;
 
-	double num = ga * (epsilon*Iabs + (rho*cp/gamma)*ga*vpd);
-	double den = epsilon*gs + gs + ga;
+	double lv = calc_enthalpy_vap(tc);
 
-	return num/den/den;
+	double R = 8.31446261815324; // Universal gas constant [J mol-1 K-1]
+
+	// PV = nRT, so RT/P = V/n ~ [m3 mol-1]
+	// convert gs from [mol m-2 s-1] to [m s-1]
+	// 1.6 converts conductance from CO2 to H2O
+	double gs_conv = (1.6)*R*(tc+273.16)/patm;
+	double gw = gs * gs_conv;  // [m s-1]
+
+	double num = ga * (epsilon*Rn + (rho*cp/gamma)*ga*vpd);
+	double den = epsilon*gw + gw + ga;
+
+	double d_le_dgw = (num/den/den); // derivative of latent energy wrt stomatal conductance for water in m s-1
+
+	return d_le_dgw * (55.5 / lv) * gs_conv;
 }
 
 
-inline double calc_dE_dgs_pml_num(double Iabs, double gs, double ga, double tc, double patm, double vpd){
-	double E = calc_transpiration_pml(Iabs, gs, ga, tc, patm, vpd);
-	double E_plus = calc_transpiration_pml(Iabs, gs+1e-6, ga, tc, patm, vpd);
+inline double calc_dE_dgs_pml_num(double Rn, double gs, double ga, double tc, double patm, double vpd){
+	double E = calc_transpiration_pml(Rn, gs, ga, tc, patm, vpd);
+	double E_plus = calc_transpiration_pml(Rn, gs+1e-6, ga, tc, patm, vpd);
 
 	return (E_plus-E)/1e-6;
 }
