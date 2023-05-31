@@ -3,8 +3,8 @@ title: "Phydro testing PML functions"
 author: "Jaideep Joshi"
 date: "2023-05-27"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -122,19 +122,54 @@ tibble(tc = -5:55) %>%
 ```{r}
 list(h_canopy = seq(1,50,length.out=10), v_wind = 0:10) %>% cross_df() %>% 
   mutate(dat1 = purrr::map2_dbl(.x=h_canopy, .y=v_wind, .f = ~calc_g_aero(.x, .y, .x+10))) %>%
-  ggplot(aes(x=v_wind, y=dat1, group=h_canopy, col=h_canopy)) + 
+  ggplot(aes(x=v_wind, y=dat1*1.01e5/8.3/300, group=h_canopy, col=h_canopy)) + 
     geom_line() + 
-    labs(y="g_aero [m s-1]", x="Wind speed [m s-1]")
+    labs(y="g_aero [mol m-2 s-1]", x="Wind speed [m s-1]")
 ```
 
 
 ### PML Transpiration from gs
 
 ```{r}
-list(ga = seq(0.01, 0.25, length.out=20), gs=seq(0.01, 0.5, length.out=20)) %>% cross_df() %>% 
-  mutate(dat1 = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pml(ppfd, .y, .x, 25, 1.01325e5, vpd))) %>%
-  ggplot(aes(x=gs, y=dat1/calc_enthalpy_vap(25)*1e-3*1000*86400, group=ga, col=ga)) + 
+list(ga = exp(seq(log(1), log(800), length.out=20)), gs=1.6*exp(seq(log(0.01), log(0.4), length.out=20))) %>% cross_df() %>% 
+  mutate(gs_ms = gs*8.31*298/1.01e5) %>% 
+  mutate(ga_ms = ga*8.31*298/1.01e5) %>% 
+  mutate(dat1 = purrr::map2_dbl(.x=ga_ms, .y=gs_ms, .f = ~calc_transpiration_pml(ppfd/2, .y, .x, 25, 1.01e5, vpd))) %>%
+  ggplot(aes(x=gs, y=dat1/calc_enthalpy_vap(25)*55.5, group=ga, col=ga)) + 
     geom_line() + 
-    labs(y="T [mm/day]")
+    geom_line(aes(y=gs*vpd/1.01e5), col="red") + 
+    scale_colour_gradient(trans = "log") + 
+    labs(y="T [mol m-2 s-1]")
 ```
 
+
+
+### PML Transpiration from gs when vpd = 0
+
+```{r}
+list(ga = exp(seq(log(1), log(800), length.out=20)), gs=1.6*exp(seq(log(0.01), log(0.4), length.out=20))) %>% cross_df() %>% 
+  mutate(gs_ms = gs*8.31*298/1.01e5) %>% 
+  mutate(ga_ms = ga*8.31*298/1.01e5) %>% 
+  mutate(dat1 = purrr::map2_dbl(.x=ga_ms, .y=gs_ms, .f = ~calc_transpiration_pml(ppfd/2, .y, .x, 25, 1.01e5, 0))) %>%
+  ggplot(aes(x=gs, y=dat1/calc_enthalpy_vap(25)*55.5, group=ga, col=ga)) + 
+    geom_line() + 
+    geom_line(aes(y=gs*0/1.01e5), col="red") + 
+    scale_colour_gradient(trans = "log") + 
+    labs(y="T [mol m-2 s-1]")
+```
+
+
+
+### PML Transpiration from gs when ppfd = 0
+
+```{r}
+list(ga = exp(seq(log(1), log(800), length.out=20)), gs=1.6*exp(seq(log(0.01), log(0.4), length.out=20))) %>% cross_df() %>% 
+  mutate(gs_ms = gs*8.31*298/1.01e5) %>% 
+  mutate(ga_ms = ga*8.31*298/1.01e5) %>% 
+  mutate(dat1 = purrr::map2_dbl(.x=ga_ms, .y=gs_ms, .f = ~calc_transpiration_pml(0, .y, .x, 25, 1.01e5, 1e3))) %>%
+  ggplot(aes(x=gs, y=dat1/calc_enthalpy_vap(25)*55.5, group=ga, col=ga)) + 
+    geom_line() + 
+    geom_line(aes(y=gs*vpd/1.01e5), col="red") + 
+    scale_colour_gradient(trans = "log") + 
+    labs(y="T [mol m-2 s-1]")
+```

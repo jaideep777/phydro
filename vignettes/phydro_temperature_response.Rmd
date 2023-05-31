@@ -3,8 +3,8 @@ title: "Phydro temperature response"
 author: "Jaideep Joshi"
 date: "2023-05-27"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -74,6 +74,8 @@ ggplot(df.m1, aes(y=value, x=tc)) +
   facet_wrap(~variable, scales = "free")
 
 ```
+
+
 ### Compare ac, aj, in inst responses
 
 ```{r}
@@ -105,4 +107,20 @@ ggplot(df.m2, aes(y=value, x=tc)) +
 ```{r}
 cbind(dat$a, dat_kattge$a) %>% matplot(x=dat$tc, type="l", col=c("black", "cyan3"), lty=1, lwd=c(2,1))
 ```
+
+
+
+
+### Compare Kumarathunge and Leuning
+
+
+```{r}
+dat_leuning = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost, list_modify(options, ftemp_vj_method = "FV_leuning02") ))) %>% unnest_wider(dat)
+```
+
+
+```{r}
+cbind(dat$a, dat_leuning$a) %>% matplot(x=dat$tc, type="l", col=c("black", "cyan3"), lty=1, lwd=c(2,1))
+```
+
 

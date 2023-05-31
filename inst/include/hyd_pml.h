@@ -49,7 +49,7 @@ inline double calc_g_aero(double h_canopy, double v_wind, double z_measurement){
 // vpd       Vapour pressure deficit [Pa]
 inline double calc_density_air(double tc_air, double patm, double vpd, bool moist = true){
 	double tk = tc_air+273.16;
-	double R = 287.058; // Universal gas const for dry air [J kg-1 K-1]
+	double R = 287.052874; // Specific universal gas const for dry air [J kg-1 K-1]
 
 	// for dry air
 	if (!moist) return patm / R / tk;
@@ -103,8 +103,8 @@ inline double calc_cp_moist_air(double tc){
 // Calculate Psychrometric constant [Pa/K]
 inline double calc_psychro(double tc, double patm) {
     // Constants
-    const double kMa = 0.62198; // Molecular weight ratio of water vapor to dry air
-    const double kMv = 0.018016; // Molecular weight of water vapor, kg/mol
+    const double Ma = 0.02896;  // Molecular weight dry air, kg/mol
+    const double Mv = 0.018016; // Molecular weight of water vapor, kg/mol
 
 	// calculate specific heat capacity of moist air
 	double cp = calc_cp_moist_air(tc);
@@ -114,9 +114,8 @@ inline double calc_psychro(double tc, double patm) {
 
     // Calculate psychrometric constant, Pa/K
     // Eq. 8, Allen et al. (1998)
-//    double psychro = cp * kMa * patm / (kMv * lv);   // J kg-1 K-1 * Pa /  J kg-1 = Pa K-1
-	// ^ This formula doesnt appear dimensionally correct
-	double psychro = cp * patm / (kMa * lv); // JJ: As per https://www.fao.org/3/x0490e/x0490e07.htm#psychrometric%20constant%20(g)
+	// double psychro = cp * kMa * patm / (kMv * lv);   // J kg-1 K-1 * Pa /  J kg-1 = Pa K-1
+	double psychro = cp * patm / ((Mv/Ma) * lv); // JJ: As per https://www.fao.org/3/x0490e/x0490e07.htm#psychrometric%20constant%20(g)
 
     return psychro;
 }

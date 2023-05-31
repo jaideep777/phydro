@@ -94,6 +94,7 @@ inline double integral_P(double dpsi, double psi_soil, ParPlant par_plant, GsMet
 }
 
 
+// sapflux [mol m-2 s-1]
 inline double calc_sapflux(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double K = scale_conductivity(par_plant.conductivity, par_env);
 	double E = K * -integral_P(dpsi, psi_soil, par_plant, par_env.gs_method);

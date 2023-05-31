@@ -3,8 +3,8 @@ title: "Phydro soil moisture response"
 author: "Jaideep Joshi"
 date: "2023-05-27"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -107,3 +107,27 @@ ggplot(df.m2, aes(y=value, x=psi_soil)) +
 cbind(dat$dpsi, dat_apx$dpsi) %>% matplot(x=dat$psi_soil, type="l", col=c("black", "cyan2"), lty=1, lwd=c(2,1))
 ```
 
+
+### Use a softmin
+
+```{r}
+
+softmin = function(a,b){
+  (a*exp(-a)+b*exp(-b))/(exp(-a)+exp(-b))
+}
+
+ca = 40
+g = calc_gammastar(25, 1.01e5)
+K = calc_kmm(25, 1.01e5)
+t = 1
+tibble(x = seq(0., 1, length.out = 100)) %>% 
+  mutate(Ac = 15*(x*ca-g)/(x*ca+K)) %>% 
+  mutate(Aj = 27*(x*ca-g)/(x*ca+2*g)) %>% 
+  mutate(A= purrr::map2_dbl(.x=Ac, .y=Aj, .f=softmin)) %>% 
+  ggplot(aes(x=x)) + 
+  geom_line(aes(y=Ac), col="green") + 
+  geom_line(aes(y=Aj), col="yellow3") +
+  geom_line(aes(y=pmin(Ac, Aj))) + 
+  geom_line(aes(y=pmin(Ac,Aj)-(t/6)*(pmax(t-abs(Ac-Aj),0)/t)^3), col="cyan3")
+
+```
