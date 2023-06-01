@@ -1,5 +1,5 @@
-#ifndef PHYDRO_PML_H
-#define PHYDRO_PML_H
+#ifndef PHYDRO_PM_ET_H
+#define PHYDRO_PM_ET_H
 
 #include <stdexcept>
 #include <cmath>
@@ -145,7 +145,7 @@ inline double gs_conv(double tc, double patm){
 // gs   Stomatal conductance to CO2 [mol m-2 s-1]
 // ga   Aerodynamic conductance [m s-1]
 // Rn   Absorbed net radiation [W m-2]
-inline double calc_transpiration_pml(double Rn, double gs, double ga, double tc, double patm, double vpd){
+inline double calc_transpiration_pm(double Rn, double gs, double ga, double tc, double patm, double vpd){
 	double rho = calc_density_air(tc, patm, vpd, true);
 	double cp = calc_cp_moist_air(tc);
 	double gamma = calc_psychro(tc, patm);
@@ -165,7 +165,7 @@ inline double calc_transpiration_pml(double Rn, double gs, double ga, double tc,
 // Q    Sap flux [mol m-2 s-1]
 // ga   Aerodynamic conductance [m s-1]
 // Rn   Absorbed net radiation [W m-2]
-inline double calc_gs_pml(double Rn, double Q, double ga, double tc, double patm, double vpd){
+inline double calc_gs_pm(double Rn, double Q, double ga, double tc, double patm, double vpd){
 	double rho = calc_density_air(tc, patm, vpd, true);
 	double cp = calc_cp_moist_air(tc);
 	double gamma = calc_psychro(tc, patm);
@@ -184,7 +184,8 @@ inline double calc_gs_pml(double Rn, double Q, double ga, double tc, double patm
 }
 
 
-inline double calc_dE_dgs_pml(double Rn, double gs, double ga, double tc, double patm, double vpd){
+// Calculate derivative of transpiration wrt stomatal conductance to CO2 [unitless] - analytical version
+inline double calc_dE_dgs_pm(double Rn, double gs, double ga, double tc, double patm, double vpd){
 	double rho = calc_density_air(tc, patm, vpd, true);
 	double cp = calc_cp_moist_air(tc);
 	double gamma = calc_psychro(tc, patm);
@@ -203,9 +204,10 @@ inline double calc_dE_dgs_pml(double Rn, double gs, double ga, double tc, double
 }
 
 
-inline double calc_dE_dgs_pml_num(double Rn, double gs, double ga, double tc, double patm, double vpd){
-	double E = calc_transpiration_pml(Rn, gs, ga, tc, patm, vpd);
-	double E_plus = calc_transpiration_pml(Rn, gs+1e-6, ga, tc, patm, vpd);
+// Calculate derivative of transpiration wrt stomatal conductance to CO2 [unitless] - numerical version
+inline double calc_dE_dgs_pm_num(double Rn, double gs, double ga, double tc, double patm, double vpd){
+	double E = calc_transpiration_pm(Rn, gs, ga, tc, patm, vpd);
+	double E_plus = calc_transpiration_pm(Rn, gs+1e-6, ga, tc, patm, vpd);
 
 	return (E_plus-E)/1e-6;
 }

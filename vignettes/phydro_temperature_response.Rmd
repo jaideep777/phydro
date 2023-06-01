@@ -124,3 +124,43 @@ cbind(dat$a, dat_leuning$a) %>% matplot(x=dat$tc, type="l", col=c("black", "cyan
 ```
 
 
+
+
+## Acclimating response using Penmann-Monteith transpiration
+
+
+```{r}
+options = list(gs_method = "GS_IGF", 
+               et_method = "ET_PM",
+               ftemp_vj_method = "FV_kumarathunge19",
+               ftemp_rd_method = "FR_heskel16",
+               ftemp_br_method = "FB_atkin15")
+
+dat_pml = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost, list_modify(options, ftemp_vj_method = "FV_kattge07") ))) %>% unnest_wider(dat)
+```
+
+```{r}
+df.pml <- dat_pml %>% select(-profit) %>% melt("tc")
+
+ggplot(df.pml, aes(y=value, x=tc)) + 
+  geom_line(col="aquamarine4") + 
+  theme_classic() +
+  theme(strip.background = element_rect(color = "white", size = 1))+
+  facet_wrap(~variable, scales = "free")
+
+```
+
+### Compare PM vs Diffusive 
+
+```{r}
+par(mfrow=c(2,2), mar=c(4,4,1,1), oma=c(1,1,1,1))
+cbind(dat_pml$e, dat$e) %>% matplot(x=dat$tc, type="l", lty=1, col=c("green4", "cyan3"), ylab="e", xlab="T")
+
+cbind(dat_pml$dpsi, dat$dpsi) %>% matplot(x=dat$tc, type="l", lty=1, col=c("green4", "cyan3"), ylab="dpsi", xlab="T")
+
+cbind(dat_pml$a, dat$a) %>% matplot(x=dat$tc, type="l", lty=1, col=c("green4", "cyan3"), ylab="a", xlab="T")
+
+cbind(dat_pml$gs, dat$gs) %>% matplot(x=dat$tc, type="l", lty=1, col=c("green4", "cyan3"), ylab="gs", xlab="T")
+
+```
+

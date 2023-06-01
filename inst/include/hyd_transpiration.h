@@ -5,7 +5,7 @@
 
 #include "pn_integrator.h"
 #include "hyd_params_classes.h"
-#include "hyd_pml.h"
+#include "hyd_pm.h"
 //#include <unsupported/Eigen/SpecialFunctions>
 
 #ifdef USE_GSL_GAMMA
@@ -112,6 +112,10 @@ inline double calc_gs(double dpsi, double psi_soil, ParPlant par_plant, ParEnv p
 	if (par_env.et_method == ET_DIFFUSION){
 		gs = Q/1.6/D; 
 	}
+	else if (par_env.et_method == ET_PM){
+		double ga = calc_g_aero(20, par_env.v_wind, 20+2);
+		gs = calc_gs_pm(par_env.Rn, Q, ga, par_env.tc, par_env.patm, par_env.vpd);
+	}
 	else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
 
 	return gs;
@@ -149,10 +153,16 @@ inline double calc_Qprime(double dpsi, double psi_soil, ParPlant par_plant, ParE
 
 
 // derivate of E wrt gs
-inline double calc_dE_dgs(ParEnv par_env){
+inline double calc_dE_dgs(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double D = (par_env.vpd/par_env.patm);
 	if (par_env.et_method == ET_DIFFUSION){
 		return 1.6*D;
+	}
+	else if (par_env.et_method == ET_PM){
+		double ga = calc_g_aero(20, par_env.v_wind, 20+2);
+		double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
+		double gs = calc_gs_pm(par_env.Rn, Q, ga, par_env.tc, par_env.patm, par_env.vpd);
+		return calc_dE_dgs_pm(par_env.Rn, gs, ga, par_env.tc, par_env.patm, par_env.vpd);
 	}
 	else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
 }
@@ -160,7 +170,7 @@ inline double calc_dE_dgs(ParEnv par_env){
 // Derivative of gs wrt dpsi, dgs/ddpsi
 inline double calc_gsprime(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double Qprime = calc_Qprime(dpsi, psi_soil, par_plant, par_env);
-	double Eprime = calc_dE_dgs(par_env);
+	double Eprime = calc_dE_dgs(dpsi, psi_soil, par_plant, par_env);
 
 	return Qprime / Eprime;
 }

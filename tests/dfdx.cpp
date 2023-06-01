@@ -16,7 +16,7 @@ int main(){
 
 	phydro::ParPlant P(3e-17, -2, 2);
 
-	phydro::ParEnv E(tc, p, vpd);
+	phydro::ParEnv E(tc, p, vpd, 1000/2);
 	E.gs_method = phydro::GS_IGF;
 	
 	phydro::ParPhotosynth ph(tc, p, kphio, co2, ppfd, fapar, rdark);

@@ -36,7 +36,7 @@ inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double
 	double pa = calc_patm(elv);
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
-	ParEnv        par_env(tc, pa, vpd);
+	ParEnv        par_env(tc, pa, vpd, ppfd/2);
 	par_cost.alpha /= par_photosynth.fT_jmax; // temperature (in)dependence of alpha
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
@@ -81,7 +81,7 @@ inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax2
 	double pa = calc_patm(elv);
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
-	ParEnv        par_env(tc, pa, vpd);
+	ParEnv        par_env(tc, pa, vpd, ppfd/2);
 	par_cost.alpha /= par_photosynth.fT_jmax; // temperature (in)dependence of alpha
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
@@ -134,7 +134,7 @@ inline PHydroResult phydro_numerical(double tc, double ppfd, double vpd, double 
 	double pa = calc_patm(elv);
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
-	ParEnv        par_env(tc, pa, vpd);
+	ParEnv        par_env(tc, pa, vpd, ppfd/2);
 	par_cost.alpha /= par_photosynth.fT_jmax; // temperature (in)dependence of alpha
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
@@ -175,7 +175,7 @@ inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25
 	double pa = calc_patm(elv);
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
-	ParEnv        par_env(tc, pa, vpd);
+	ParEnv        par_env(tc, pa, vpd, ppfd/2);
 	par_cost.alpha /= par_photosynth.fT_jmax; // temperature (in)dependence of alpha
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
