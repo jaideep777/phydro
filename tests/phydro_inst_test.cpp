@@ -17,7 +17,7 @@ int main(){
 	ParCost        par_cost(0.118514, 1.227068);
 	ParPlant       par_plant(7.457324e-17, -1.039539, 1);
 	ParPhotosynth  par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark);
-	ParEnv         par_env(tc, pa, vpd);
+	ParEnv         par_env(tc, pa, vpd, ppfd/2);
 
 	double jmax = 117.0184518;
 	double vcmax = 55.6279401;

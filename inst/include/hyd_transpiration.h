@@ -5,6 +5,7 @@
 
 #include "pn_integrator.h"
 #include "hyd_params_classes.h"
+#include "hyd_pm.h"
 //#include <unsupported/Eigen/SpecialFunctions>
 
 #ifdef USE_GSL_GAMMA
@@ -78,23 +79,25 @@ inline double integral_P_approx(double dpsi, double psi_soil, double psi50, doub
 	return -P(psi_soil-dpsi/2, psi50, b)*dpsi;
 }
 
+
 inline double integral_P_approx2(double dpsi, double psi_soil, double psi50, double b){
 	return -(P(psi_soil, psi50, b)+P(psi_soil-dpsi, psi50, b))/2 * dpsi;
 }
 
 
-inline double integral_P(double dpsi, double psi_soil, ParPlant par_plant){
-	if      (par_plant.gs_method == GS_QNG)  return integral_P_numerical( dpsi, psi_soil, par_plant.psi50, par_plant.b);
-	else if (par_plant.gs_method == GS_IGF)  return integral_P_analytical(dpsi, psi_soil, par_plant.psi50, par_plant.b);
-	else if (par_plant.gs_method == GS_APX)  return integral_P_approx(    dpsi, psi_soil, par_plant.psi50, par_plant.b);
-	else if (par_plant.gs_method == GS_APX2) return integral_P_approx2(   dpsi, psi_soil, par_plant.psi50, par_plant.b);
+inline double integral_P(double dpsi, double psi_soil, ParPlant par_plant, GsMethod gs_method){
+	if      (gs_method == GS_QNG)  return integral_P_numerical( dpsi, psi_soil, par_plant.psi50, par_plant.b);
+	else if (gs_method == GS_IGF)  return integral_P_analytical(dpsi, psi_soil, par_plant.psi50, par_plant.b);
+	else if (gs_method == GS_APX)  return integral_P_approx(    dpsi, psi_soil, par_plant.psi50, par_plant.b);
+	else if (gs_method == GS_APX2) return integral_P_approx2(   dpsi, psi_soil, par_plant.psi50, par_plant.b);
 	else throw std::runtime_error("Unsupported gs_method specified");
 }
 
 
-inline double calc_transpiration(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+// sapflux [mol m-2 s-1]
+inline double calc_sapflux(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double K = scale_conductivity(par_plant.conductivity, par_env);
-	double E = K * -integral_P(dpsi, psi_soil, par_plant);
+	double E = K * -integral_P(dpsi, psi_soil, par_plant, par_env.gs_method);
 	return E;
 }
 
@@ -102,40 +105,74 @@ inline double calc_transpiration(double dpsi, double psi_soil, ParPlant par_plan
 // Calculates regulated stomatal conducatnce given the leaf water potential, 
 // plant hydraulic traits, and the environment.
 inline double calc_gs(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
-	double E = calc_transpiration(dpsi, psi_soil, par_plant, par_env);
+	double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
 	double D = (par_env.vpd/par_env.patm);
-	double gs = E/1.6/D; 
+
+	double gs;
+	if (par_env.et_method == ET_DIFFUSION){
+		gs = Q/1.6/D; 
+	}
+	else if (par_env.et_method == ET_PM){
+		double ga = calc_g_aero(20, par_env.v_wind, 20+2);
+		gs = calc_gs_pm(par_env.Rn, Q, ga, par_env.tc, par_env.patm, par_env.vpd);
+	}
+	else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
+
 	return gs;
 }
 
 
-inline double calc_gsprime_analytical(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+// Derivative of sapflux wrt dpsi, dQ/ddpsi
+inline double calc_Qprime_analytical(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double K = scale_conductivity(par_plant.conductivity, par_env);
-	double D = (par_env.vpd/par_env.patm);
-	return K/1.6/D*P(psi_soil-dpsi, par_plant.psi50, par_plant.b);
+	return K*P(psi_soil-dpsi, par_plant.psi50, par_plant.b);
 }
 
 
-inline double calc_gsprime_approx(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+inline double calc_Qprime_approx(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double K = scale_conductivity(par_plant.conductivity, par_env);
-	double D = (par_env.vpd/par_env.patm);
-	return K/1.6/D*(P(psi_soil-dpsi/2, par_plant.psi50, par_plant.b) - Pprime(psi_soil-dpsi/2, par_plant.psi50, par_plant.b)*dpsi/2);
+	return K*(P(psi_soil-dpsi/2, par_plant.psi50, par_plant.b) - Pprime(psi_soil-dpsi/2, par_plant.psi50, par_plant.b)*dpsi/2);
 }
 
 
-inline double calc_gsprime_approx2(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+inline double calc_Qprime_approx2(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double K = scale_conductivity(par_plant.conductivity, par_env);
-	double D = (par_env.vpd/par_env.patm);
-	return K/1.6/D* (  (P(psi_soil, par_plant.psi50, par_plant.b)+P(psi_soil-dpsi, par_plant.psi50, par_plant.b))/2 
-	                  - Pprime(psi_soil-dpsi, par_plant.psi50, par_plant.b)*dpsi/2 );
+	return K* (  (P(psi_soil, par_plant.psi50, par_plant.b)+P(psi_soil-dpsi, par_plant.psi50, par_plant.b))/2 
+	            - Pprime(psi_soil-dpsi, par_plant.psi50, par_plant.b)*dpsi/2 );
 }
 
 
+// Derivative of sapflux wrt dpsi, dQ/ddpsi
+inline double calc_Qprime(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+	if      (par_env.gs_method == GS_APX)  return calc_Qprime_approx(    dpsi, psi_soil, par_plant, par_env);
+	else if (par_env.gs_method == GS_APX2) return calc_Qprime_approx2(   dpsi, psi_soil, par_plant, par_env);
+	else if (par_env.gs_method == GS_IGF)  return calc_Qprime_analytical(dpsi, psi_soil, par_plant, par_env);
+	else if (par_env.gs_method == GS_QNG)  return calc_Qprime_analytical(dpsi, psi_soil, par_plant, par_env);
+	else throw std::runtime_error("Unsupported gs_method specified");
+}
+
+
+// derivate of E wrt gs
+inline double calc_dE_dgs(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+	double D = (par_env.vpd/par_env.patm);
+	if (par_env.et_method == ET_DIFFUSION){
+		return 1.6*D;
+	}
+	else if (par_env.et_method == ET_PM){
+		double ga = calc_g_aero(20, par_env.v_wind, 20+2);
+		double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
+		double gs = calc_gs_pm(par_env.Rn, Q, ga, par_env.tc, par_env.patm, par_env.vpd);
+		return calc_dE_dgs_pm(par_env.Rn, gs, ga, par_env.tc, par_env.patm, par_env.vpd);
+	}
+	else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
+}
+
+// Derivative of gs wrt dpsi, dgs/ddpsi
 inline double calc_gsprime(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
-	if      (par_plant.gs_method == GS_APX)  return calc_gsprime_approx(    dpsi, psi_soil, par_plant, par_env);
-	else if (par_plant.gs_method == GS_APX2) return calc_gsprime_approx2(   dpsi, psi_soil, par_plant, par_env);
-	else                                     return calc_gsprime_analytical(dpsi, psi_soil, par_plant, par_env);
+	double Qprime = calc_Qprime(dpsi, psi_soil, par_plant, par_env);
+	double Eprime = calc_dE_dgs(dpsi, psi_soil, par_plant, par_env);
 
+	return Qprime / Eprime;
 }
 
 } // phydro

@@ -3,8 +3,8 @@ title: "Phydro soil moisture response"
 author: "Jaideep Joshi"
 date: "2023-05-27"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -105,5 +105,68 @@ ggplot(df.m2, aes(y=value, x=psi_soil)) +
 
 ```{r}
 cbind(dat$dpsi, dat_apx$dpsi) %>% matplot(x=dat$psi_soil, type="l", col=c("black", "cyan2"), lty=1, lwd=c(2,1))
+```
+
+
+### Use a softmin
+
+```{r}
+
+softmin = function(a,b){
+  (a*exp(-a)+b*exp(-b))/(exp(-a)+exp(-b))
+}
+
+ca = 40
+g = calc_gammastar(25, 1.01e5)
+K = calc_kmm(25, 1.01e5)
+t = 1
+tibble(x = seq(0., 1, length.out = 100)) %>% 
+  mutate(Ac = 15*(x*ca-g)/(x*ca+K)) %>% 
+  mutate(Aj = 27*(x*ca-g)/(x*ca+2*g)) %>% 
+  mutate(A= purrr::map2_dbl(.x=Ac, .y=Aj, .f=softmin)) %>% 
+  ggplot(aes(x=x)) + 
+  geom_line(aes(y=Ac), col="green") + 
+  geom_line(aes(y=Aj), col="yellow3") +
+  geom_line(aes(y=pmin(Ac, Aj))) + 
+  geom_line(aes(y=pmin(Ac,Aj)-(t/6)*(pmax(t-abs(Ac-Aj),0)/t)^3), col="cyan3")
+
+```
+
+## Acclimating response using Penmann-Monteith transpiration
+
+
+```{r}
+options = list(gs_method = "GS_IGF", 
+               et_method = "ET_PM",
+               ftemp_vj_method = "FV_kumarathunge19",
+               ftemp_rd_method = "FR_heskel16",
+               ftemp_br_method = "FB_atkin15")
+
+dat_pml = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, .x, rdark, par_plant, par_cost, options))) %>% unnest_wider(dat)
+```
+
+```{r}
+df.pml <- dat_pml %>% select(-profit) %>% melt("psi_soil")
+
+ggplot(df.pml, aes(y=value, x=psi_soil)) + 
+  geom_line(col="aquamarine4") + 
+  theme_classic() +
+  theme(strip.background = element_rect(color = "white", size = 1))+
+  facet_wrap(~variable, scales = "free")
+
+```
+
+### Compare PM vs Diffusive 
+
+```{r}
+par(mfrow=c(2,2), mar=c(4,4,1,1), oma=c(1,1,1,1))
+cbind(dat_pml$e, dat$e) %>% matplot(x=dat$psi_soil, type="l", lty=1, col=c("green4", "cyan3"), ylab="e", xlab="psi_soil")
+
+cbind(dat_pml$dpsi, dat$dpsi) %>% matplot(x=dat$psi_soil, type="l", lty=1, col=c("green4", "cyan3"), ylab="dpsi", xlab="psi_soil")
+
+cbind(dat_pml$a, dat$a) %>% matplot(x=dat$psi_soil, type="l", lty=1, col=c("green4", "cyan3"), ylab="a", xlab="psi_soil")
+
+cbind(dat_pml$gs, dat$gs) %>% matplot(x=dat$psi_soil, type="l", lty=1, col=c("green4", "cyan3"), ylab="gs", xlab="psi_soil")
+
 ```
 

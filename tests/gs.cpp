@@ -11,9 +11,9 @@ int main(){
 	
 	double g;
 	phydro::ParPlant P(3e-17, -2, 2);
-	P.gs_method = phydro::GS_IGF;
 
-	phydro::ParEnv E(tc, p, vpd);
+	phydro::ParEnv E(tc, p, vpd, 1000/2);
+	E.gs_method = phydro::GS_IGF;
 
 	auto t1 = std::chrono::high_resolution_clock::now();
 	int N = 10;
