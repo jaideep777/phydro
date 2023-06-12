@@ -9,6 +9,7 @@ inst/website
 *.xlsx
 *.csv
 gprof2dot.py
+perf.data*
 
 *~
 

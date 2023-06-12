@@ -171,6 +171,7 @@ inline double calc_dE_dgs(double dpsi, double psi_soil, ParPlant par_plant, ParE
 	else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
 }
 
+
 // Derivative of gs wrt dpsi, dgs/ddpsi
 inline double calc_gsprime(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double Qprime = calc_Qprime(dpsi, psi_soil, par_plant, par_env);
@@ -178,6 +179,7 @@ inline double calc_gsprime(double dpsi, double psi_soil, ParPlant par_plant, Par
 
 	return Qprime / Eprime;
 }
+
 
 } // phydro
 

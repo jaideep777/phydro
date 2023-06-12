@@ -15,7 +15,7 @@ INC_PATH := -I./inst/include -isystem /usr/include/eigen3 -isystem ./inst/LBFGSp
 LIB_PATH := -L./lib 
 
 # flags
-CPPFLAGS = -O3 -g -pg -std=c++11 -Wall -Wextra -pedantic
+CPPFLAGS = -O2 -g -pg -std=c++11 -Wall -Wextra -pedantic
 LDFLAGS =  -g -pg
 
 #CPPFLAGS += -Weffc++ 
