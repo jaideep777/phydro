@@ -44,6 +44,7 @@ class ParPhotosynth{
 
 		kmm = calc_kmm(_tc, _patm);
 		gammastar = calc_gammastar(_tc, _patm);
+
 		phi0 = _kphio*calc_ftemp_kphio(_tc);
 		Iabs = _ppfd * _fapar;
 		ca = _co2 * _patm * 1e-6;

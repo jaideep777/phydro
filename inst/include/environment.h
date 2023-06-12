@@ -35,6 +35,11 @@ class ParEnv{
 		patm = _patm;
 		Rn = _Rn;
 		v_wind = 3; // global average value
+
+		calc_temp_dependencies();
+	}
+
+	void calc_temp_dependencies(){
 		viscosity_water = calc_viscosity_h2o(tc, patm);
 		density_water = calc_density_h2o(tc, patm);
 
@@ -44,7 +49,6 @@ class ParEnv{
 		epsilon = calc_sat_slope(tc) / gamma;
 
 		lv = calc_enthalpy_vap(tc);
-
 	}
 };
 
