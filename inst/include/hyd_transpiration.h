@@ -5,6 +5,7 @@
 
 #include "pn_integrator.h"
 #include "hyd_params_classes.h"
+#include "environment.h"
 #include "hyd_pm.h"
 //#include <unsupported/Eigen/SpecialFunctions>
 
