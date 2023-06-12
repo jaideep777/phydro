@@ -1,7 +1,7 @@
 #ifndef PHYDRO_ENVIRONMENT_H
 #define PHYDRO_ENVIRONMENT_H
 
-#include "temperature_dependencies.h"
+#include "temperature_dependencies_physical.h"
 
 namespace phydro{
 

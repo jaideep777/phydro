@@ -31,6 +31,17 @@ struct PHydroResult{
 	double aj;
 };
 
+
+class ParControl{
+	public:
+	GsMethod             gs_method       = GS_IGF;
+	ETMethod             et_method       = ET_DIFFUSION;
+	FtempVcmaxJmaxMethod ftemp_vj_method = FV_kumarathunge19;
+	FtempRdMethod        ftemp_rd_method = FR_heskel16; 
+	FtempBrMethod        ftemp_br_method = FB_atkin15;
+};
+
+
 inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);

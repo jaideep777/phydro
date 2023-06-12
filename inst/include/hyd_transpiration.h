@@ -15,7 +15,10 @@
 #include "incgamma.h"
 #endif
 
+
+
 namespace phydro{
+
 
 // Vulnerability curve
 inline double P(double psi, double psi50, double b){

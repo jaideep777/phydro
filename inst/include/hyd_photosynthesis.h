@@ -1,9 +1,67 @@
 #ifndef PHYDRO_PHOTOSYNTHESIS_H
 #define PHYDRO_PHOTOSYNTHESIS_H
 
-#include "hyd_params_classes.h"
+#include <cmath>
+#include <stdexcept>
+
+#include "temperature_dependencies_photosynthesis.h"
 
 namespace phydro{
+
+
+
+class ParPhotosynth{
+	public:
+	double kmm;
+	double gammastar;
+	double phi0;
+	double ca;
+	double delta;  // TODO: Replace name with brd / rdark
+
+	FtempVcmaxJmaxMethod ftemp_vj_method;
+	FtempRdMethod        ftemp_rd_method;
+	FtempBrMethod        ftemp_br_method;
+
+	double Iabs;
+	double patm;
+
+	double fT_vcmax;
+	double fT_jmax;
+	double fT_rd;
+
+	ParPhotosynth(double _tc, double _patm, double _kphio, double _co2, double _ppfd, double _fapar, double _rdark25,
+				  FtempVcmaxJmaxMethod _ftemp_vj_method = FV_kumarathunge19, 
+				  FtempRdMethod        _ftemp_rd_method = FR_heskel16, 
+				  FtempBrMethod        _ftemp_br_method = FB_atkin15){
+		
+		ftemp_vj_method = _ftemp_vj_method;
+		ftemp_rd_method = _ftemp_rd_method;
+		ftemp_br_method = _ftemp_br_method;
+
+		fT_vcmax = calc_ftemp_inst_vcmax(_tc, _tc, 25.0, ftemp_vj_method);
+		fT_jmax  = calc_ftemp_inst_jmax(_tc, _tc, _tc, 25, ftemp_vj_method);
+		fT_rd    = calc_ftemp_inst_rd(_tc, _ftemp_rd_method);
+
+		kmm = calc_kmm(_tc, _patm);
+		gammastar = calc_gammastar(_tc, _patm);
+		phi0 = _kphio*calc_ftemp_kphio(_tc);
+		Iabs = _ppfd * _fapar;
+		ca = _co2 * _patm * 1e-6;
+		patm = _patm;
+		delta = _rdark25 * fT_rd / fT_vcmax;
+
+	}
+
+};
+
+
+
+struct ACi{
+	double a;
+	double ci;
+	bool isVcmaxLimited;
+};
+
 
 inline double QUADM(double A, double B, double C){
 	return (-B - sqrt(B*B - 4*A*C)) / (2*A);
@@ -12,12 +70,6 @@ inline double QUADM(double A, double B, double C){
 inline double QUADP(double A, double B, double C){
 	return (-B + sqrt(B*B - 4*A*C)) / (2*A);
 }
-
-struct ACi{
-	double a;
-	double ci;
-	bool isVcmaxLimited;
-};
 
 
 inline ACi calc_assim_rubisco_limited(double _gs, double vcmax, ParPhotosynth par_photosynth){
@@ -65,6 +117,9 @@ inline ACi calc_assim_light_limited(double _gs, double jmax, ParPhotosynth par_p
 
 }
 
+
+// I have tried using a smooth minimum for calculating the limiting rate, but it absolutely does not work
+// with the optimizer. I have no idea why.
 inline ACi calc_assimilation_limiting(double vcmax, double jmax, double gs, ParPhotosynth par_photosynth){
 	auto Ac = calc_assim_rubisco_limited(gs, vcmax, par_photosynth);
 	auto Aj = calc_assim_light_limited(gs, jmax, par_photosynth);
@@ -76,3 +131,4 @@ inline ACi calc_assimilation_limiting(double vcmax, double jmax, double gs, ParP
 } // phydro
 
 #endif
+
