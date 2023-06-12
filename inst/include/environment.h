@@ -19,6 +19,13 @@ class ParEnv{
 	double viscosity_water;  // [Pa s]
 	double density_water;    // [kg m-3]
 
+	double rho;       // density of air [kg m-3]
+	double cp;	      // specific heat capacity of moist air 
+	double gamma;     // psychrometric constant
+	double epsilon;   // slope of saturation-pressure - temp curve
+	double lv;        // latent heat of vaporization of water
+
+
 	GsMethod gs_method = GS_IGF;
 	ETMethod et_method = ET_DIFFUSION;
 
@@ -30,6 +37,14 @@ class ParEnv{
 		v_wind = 3; // global average value
 		viscosity_water = calc_viscosity_h2o(tc, patm);
 		density_water = calc_density_h2o(tc, patm);
+
+		rho = calc_density_air(tc, patm, vpd, true);
+		cp = calc_cp_moist_air(tc);
+		gamma = calc_psychro(tc, patm);
+		epsilon = calc_sat_slope(tc) / gamma;
+
+		lv = calc_enthalpy_vap(tc);
+
 	}
 };
 

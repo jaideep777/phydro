@@ -154,12 +154,18 @@ inline Rcpp::List rphydro_instantaneous_numerical(double vcmax25, double jmax25,
 } // phydro namespace
 
 
+RCPP_EXPOSED_CLASS(phydro::ParEnv);
+
 using namespace phydro;
 
 // -------------------------------------------------------------
 //   R Interface
 // -------------------------------------------------------------
 RCPP_MODULE(phydro_module) {
+	class_ <ParEnv>("ParEnv")
+		.constructor<double,double,double,double>()
+	;
+
 	// Temperature dependencies
 	function("calc_kmm", &calc_kmm);
 	function("calc_patm", &calc_patm);
@@ -171,7 +177,7 @@ RCPP_MODULE(phydro_module) {
 	// function("calc_ftemp_inst_jmax", &calc_ftemp_inst_jmax);
 	// function("calc_ftemp_inst_rd", &calc_ftemp_inst_rd);
 
-	// pml functions
+	// pm functions
 	function("calc_esat", &calc_esat);
 	function("calc_g_aero", &calc_g_aero);
 	function("calc_density_air", &calc_density_air);
@@ -179,10 +185,10 @@ RCPP_MODULE(phydro_module) {
 	function("calc_cp_moist_air", &calc_cp_moist_air);
 	function("calc_psychro", &calc_psychro);
 	function("calc_sat_slope", &calc_sat_slope);
-	function("calc_transpiration_pml", &calc_transpiration_pml);
-	function("calc_gs_pml", &calc_gs_pml);
-	function("calc_dE_dgs_pml", &calc_dE_dgs_pml);
-	function("calc_dE_dgs_pml_num", &calc_dE_dgs_pml_num);
+	function("calc_transpiration_pm", &calc_transpiration_pm);
+	function("calc_gs_pm", &calc_gs_pm);
+	function("calc_dE_dgs_pm", &calc_dE_dgs_pm);
+	function("calc_dE_dgs_pm_num", &calc_dE_dgs_pm_num);
 
 
 	// Phydro core

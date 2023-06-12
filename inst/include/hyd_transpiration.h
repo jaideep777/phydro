@@ -118,7 +118,7 @@ inline double calc_gs(double dpsi, double psi_soil, ParPlant par_plant, ParEnv p
 	}
 	else if (par_env.et_method == ET_PM){
 		double ga = calc_g_aero(20, par_env.v_wind, 20+2);
-		gs = calc_gs_pm(par_env.Rn, Q, ga, par_env.tc, par_env.patm, par_env.vpd);
+		gs = calc_gs_pm(Q, ga, par_env);
 	}
 	else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
 
@@ -165,8 +165,8 @@ inline double calc_dE_dgs(double dpsi, double psi_soil, ParPlant par_plant, ParE
 	else if (par_env.et_method == ET_PM){
 		double ga = calc_g_aero(20, par_env.v_wind, 20+2);
 		double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
-		double gs = calc_gs_pm(par_env.Rn, Q, ga, par_env.tc, par_env.patm, par_env.vpd);
-		return calc_dE_dgs_pm(par_env.Rn, gs, ga, par_env.tc, par_env.patm, par_env.vpd);
+		double gs = calc_gs_pm(Q, ga, par_env);
+		return calc_dE_dgs_pm(gs, ga, par_env);
 	}
 	else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
 }

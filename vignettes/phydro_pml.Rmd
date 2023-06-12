@@ -127,12 +127,15 @@ list(h_canopy = seq(1,50,length.out=10), v_wind = 0:10) %>% cross_df() %>%
     labs(y="g_aero [mol m-2 s-1]", x="Wind speed [m s-1]")
 ```
 
+```{r}
+par_env_25 = new(ParEnv, 25, calc_patm(elv), vpd, ppfd/2)
+```
 
 ### PML Transpiration from gs
 
 ```{r}
 list(ga = exp(seq(log(0.01), log(12), length.out=20)), gs=exp(seq(log(0.01), log(0.4), length.out=20))) %>% cross_df() %>% 
-  mutate(dat1 = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pml(ppfd/2, .y, .x, 25, 1.01e5, vpd))) %>%
+  mutate(dat1 = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pm(.y, .x, par_env_25))) %>%
   ggplot(aes(x=gs, y=dat1, group=ga, col=ga)) + 
     geom_line() + 
     geom_line(aes(y=1.6*gs*vpd/1.01e5), col="red") + 
@@ -146,7 +149,7 @@ list(ga = exp(seq(log(0.01), log(12), length.out=20)), gs=exp(seq(log(0.01), log
 
 ```{r}
 list(ga = exp(seq(log(0.01), log(12), length.out=20)), gs=exp(seq(log(0.01), log(0.4), length.out=20))) %>% cross_df() %>% 
-  mutate(dat1 = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pml(ppfd/2, .y, .x, 25, 1.01e5, 0))) %>%
+  mutate(dat1 = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pm(.y, .x, par_env_25))) %>%
   ggplot(aes(x=gs, y=dat1, group=ga, col=ga)) + 
     geom_line() + 
     geom_line(aes(y=1.6*gs*0/1.01e5), col="red") + 
@@ -160,7 +163,7 @@ list(ga = exp(seq(log(0.01), log(12), length.out=20)), gs=exp(seq(log(0.01), log
 
 ```{r}
 list(ga = exp(seq(log(0.01), log(12), length.out=20)), gs=exp(seq(log(0.01), log(0.4), length.out=20))) %>% cross_df() %>% 
-  mutate(dat1 = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pml(0, .y, .x, 25, 1.01e5, vpd))) %>%
+  mutate(dat1 = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pm(.y, .x, par_env_25))) %>%
   ggplot(aes(x=gs, y=dat1, group=ga, col=ga)) + 
     geom_line() + 
     geom_line(aes(y=1.6*gs*vpd/1.01e5), col="red") + 
@@ -177,8 +180,8 @@ All points should lie on 1:1 line
 
 ```{r}
 list(ga = exp(seq(log(0.01), log(12), length.out=20)), gs=exp(seq(log(0.01), log(0.4), length.out=20))) %>% cross_df() %>% 
-  mutate(trans = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pml(ppfd/2, .y, .x, 25, 1.01e5, vpd))) %>%
-  mutate(gs1 = purrr::map2_dbl(.x=ga, .y=trans, .f = ~calc_gs_pml(ppfd/2, .y, .x, 25, 1.01e5, vpd))) %>%
+  mutate(trans = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pm(.y, .x, par_env_25))) %>%
+  mutate(gs1 = purrr::map2_dbl(.x=ga, .y=trans, .f = ~calc_gs_pm(.y, .x, par_env_25))) %>%
   ggplot(aes(x=gs, y=gs1)) + 
     geom_abline(slope = 1, intercept = 0, col="grey")+
     geom_point() 
@@ -191,8 +194,8 @@ All points should lie on 1:1 line
 
 ```{r}
 list(ga = exp(seq(log(0.01), log(12), length.out=20)), gs=exp(seq(log(0.01), log(0.4), length.out=20))) %>% cross_df() %>% 
-  mutate(dedgs = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_dE_dgs_pml(ppfd/2, .y, .x, 25, 1.01e5, vpd))) %>%
-  mutate(dedgs_num = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_dE_dgs_pml_num(ppfd/2, .y, .x, 25, 1.01e5, vpd))) %>%
+  mutate(dedgs = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_dE_dgs_pm(.y, .x, par_env_25))) %>%
+  mutate(dedgs_num = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_dE_dgs_pm_num(.y, .x, par_env_25))) %>%
   ggplot(aes(x=dedgs, y=dedgs_num)) + 
     geom_abline(slope = 1, intercept = 0, col="grey")+
     geom_point() 
