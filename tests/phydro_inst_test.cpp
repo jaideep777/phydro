@@ -36,6 +36,7 @@ int main(){
 	auto dpsi_opt = pn::zero(0, 20, [&](double dpsi){return calc_dP_ddpsi(dpsi, vcmax, jmax, psi_soil, par_plant, par_env, par_photosynth, par_cost);}, 1e-6);
 	cout << "Opt analytical = " << dpsi_opt.root << "\n";
 
-	return 0;
+	if (fabs(dpsi_opt_num - dpsi_opt.root) < 1e-5) return 0;
+	else return 1;
 }
 

@@ -148,8 +148,10 @@ list(ga = exp(seq(log(0.01), log(12), length.out=20)), gs=exp(seq(log(0.01), log
 ### PML Transpiration from gs when vpd = 0
 
 ```{r}
+par_env_25_vpd0 = new(ParEnv, 25, calc_patm(elv), 0, ppfd/2)
+
 list(ga = exp(seq(log(0.01), log(12), length.out=20)), gs=exp(seq(log(0.01), log(0.4), length.out=20))) %>% cross_df() %>% 
-  mutate(dat1 = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pm(.y, .x, par_env_25))) %>%
+  mutate(dat1 = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pm(.y, .x, par_env_25_vpd0))) %>%
   ggplot(aes(x=gs, y=dat1, group=ga, col=ga)) + 
     geom_line() + 
     geom_line(aes(y=1.6*gs*0/1.01e5), col="red") + 
@@ -162,8 +164,10 @@ list(ga = exp(seq(log(0.01), log(12), length.out=20)), gs=exp(seq(log(0.01), log
 ### PML Transpiration from gs when ppfd = 0
 
 ```{r}
+par_env_25_ppfd0 = new(ParEnv, 25, calc_patm(elv), vpd, 0/2)
+
 list(ga = exp(seq(log(0.01), log(12), length.out=20)), gs=exp(seq(log(0.01), log(0.4), length.out=20))) %>% cross_df() %>% 
-  mutate(dat1 = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pm(.y, .x, par_env_25))) %>%
+  mutate(dat1 = purrr::map2_dbl(.x=ga, .y=gs, .f = ~calc_transpiration_pm(.y, .x, par_env_25_ppfd0))) %>%
   ggplot(aes(x=gs, y=dat1, group=ga, col=ga)) + 
     geom_line() + 
     geom_line(aes(y=1.6*gs*vpd/1.01e5), col="red") + 
