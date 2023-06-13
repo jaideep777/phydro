@@ -163,7 +163,16 @@ using namespace phydro;
 // -------------------------------------------------------------
 RCPP_MODULE(phydro_module) {
 	class_ <ParEnv>("ParEnv")
+		.constructor<double,double,double,double,double>()
 		.constructor<double,double,double,double>()
+		.method("print", &ParEnv::print)
+		.method("calc_temp_dependencies", &ParEnv::calc_temp_dependencies)
+
+		.field("tc", &ParEnv::tc)
+		.field("vpd", &ParEnv::vpd)
+		.field("patm", &ParEnv::patm)
+		.field("Rn", &ParEnv::Rn)
+		.field("v_wind", &ParEnv::v_wind)
 	;
 
 	// Temperature dependencies
