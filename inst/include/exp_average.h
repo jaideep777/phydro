@@ -24,18 +24,18 @@ class ExpAverager{
 		tau = _tau;
 	}
 	
-	inline void update(double t, double f){
+	void update(double t, double f){
 		double dt = t - t_last;
 		double alpha = 1 - exp(-dt/tau);
 		t_last = t;
 		f_last += alpha * (f-f_last);
 	}
 
-	inline T get(){
+	T get(){
 		return f_last;
 	}
 
-	inline void save(std::ofstream &fout){
+	void save(std::ofstream &fout){
 		fout << "ExpAverager::v1\n";
 
 		fout << t_last << ' '
@@ -43,7 +43,7 @@ class ExpAverager{
 			 << tau << '\n';		
 	}
 
-	inline void restore(std::ifstream &fin){
+	void restore(std::ifstream &fin){
 		std::string s; fin >> s; // discard version number
 		assert(s == "ExpAverager::v1");
 
