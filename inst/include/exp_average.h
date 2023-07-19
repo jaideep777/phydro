@@ -1,5 +1,5 @@
-#ifndef UTILS_MATH_MOVING_AVG_H_
-#define UTILS_MATH_MOVING_AVG_H_
+#ifndef UTILS_MATH_EXP_MOVING_AVG_H_
+#define UTILS_MATH_EXP_MOVING_AVG_H_
 
 #include <iostream>
 #include <cmath>
@@ -35,7 +35,7 @@ class ExpAverager{
 		return f_last;
 	}
 
-	void save(std::ofstream &fout){
+	inline void save(std::ofstream &fout){
 		fout << "ExpAverager::v1\n";
 
 		fout << t_last << ' '
@@ -43,7 +43,7 @@ class ExpAverager{
 			 << tau << '\n';		
 	}
 
-	void restore(std::ifstream &fin){
+	inline void restore(std::ifstream &fin){
 		std::string s; fin >> s; // discard version number
 		assert(s == "ExpAverager::v1");
 
@@ -56,3 +56,4 @@ class ExpAverager{
 
 
 #endif
+
