@@ -39,6 +39,7 @@ class ParControl{
 	FtempVcmaxJmaxMethod ftemp_vj_method = FV_kumarathunge19;
 	FtempRdMethod        ftemp_rd_method = FR_heskel16; 
 	FtempBrMethod        ftemp_br_method = FB_atkin15;
+	bool                 scale_alpha     = true;
 };
 
 
@@ -48,7 +49,7 @@ inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd, ppfd/2, vwind);
-	par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
+	if (par_control.scale_alpha) par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
 
@@ -95,7 +96,7 @@ inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax2
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd, ppfd/2, vwind);
-	par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
+	if (par_control.scale_alpha) par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
 
@@ -148,7 +149,7 @@ inline PHydroResult phydro_numerical(double tc, double ppfd, double vpd, double 
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd, ppfd/2, vwind);
-	par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
+	if (par_control.scale_alpha) par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
 
@@ -190,7 +191,7 @@ inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd, ppfd/2, vwind);
-	par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
+	if (par_control.scale_alpha) par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
 

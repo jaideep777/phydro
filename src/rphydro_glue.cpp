@@ -106,6 +106,7 @@ ParControl convertOptionsToControl(Rcpp::List options){
 	par_control.ftemp_vj_method = stringToFtempVcmaxJmaxMethod(options["ftemp_vj_method"]);
 	par_control.ftemp_rd_method = stringToFtempRdMethod(options["ftemp_rd_method"]);
 	par_control.ftemp_br_method = stringToFtempBrMethod(options["ftemp_br_method"]);
+	par_control.scale_alpha     = options["scale_alpha"];
 	return par_control;
 }
 

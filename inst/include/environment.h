@@ -14,17 +14,17 @@ class ParEnv{
 	double tc;     // Temperature [degC]
 	double patm;   // Atmospheric pressure [Pa]
 	double vpd;    // VPD [Pa]
-	double Rn;     // net radiation [w m-2]
+	double Rn;     // net radiation [W m-2]
 	double v_wind; // Wind speed [m s-1]
 
 	double viscosity_water;  // [Pa s]
 	double density_water;    // [kg m-3]
 
 	double rho;       // density of air [kg m-3]
-	double cp;	      // specific heat capacity of moist air 
-	double gamma;     // psychrometric constant
-	double epsilon;   // slope of saturation-pressure - temp curve
-	double lv;        // latent heat of vaporization of water
+	double cp;	      // specific heat capacity of moist air [J kg-1 K-1]
+	double gamma;     // psychrometric constant [Pa K-1]
+	double epsilon;   // slope of saturation-pressure - temp curve [Pa K-1]
+	double lv;        // latent heat of vaporization of water [J kg-1]
 
 
 	GsMethod gs_method = GS_IGF;

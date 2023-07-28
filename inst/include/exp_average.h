@@ -6,6 +6,8 @@
 #include <fstream>
 #include <cassert>
 
+// REF: https://stackoverflow.com/questions/1023860/exponential-moving-average-sampled-at-varying-times
+
 template <class T>
 class ExpAverager{
 	private:
