@@ -38,6 +38,8 @@ df_flux = fdk_convert_lsm(
   path="~/Downloads/flux_data_kit_beta/fluxes/",
   fluxnet_format = T,
 )
+
+df_flux = df_flux %>% mutate(time = as.POSIXct(TIMESTAMP_START, tz = "GMT", format="%Y%m%d%H%M"))
 ```
 
 Read same data in LSM format
@@ -78,9 +80,14 @@ Compare Fluxnet and LSM formatted values
 df_lsm %>% filter(as.Date(time) >= as.Date("2020-06-01") &
                as.Date(time) <= as.Date("2020-06-03") ) %>% 
   with(plot(GPP~as.POSIXct(time), type="l"))
-df_flux %>% filter(as.Date(as.POSIXct(TIMESTAMP_START, tz = "GMT", format="%Y%m%d%H%M")) >= as.Date("2020-06-01") &
-                 as.Date(as.POSIXct(TIMESTAMP_START, tz = "GMT", format="%Y%m%d%H%M")) <= as.Date("2020-06-03") ) %>% 
-  with(points(GPP_NT_VUT_REF~as.POSIXct(TIMESTAMP_START, tz = "GMT", format="%Y%m%d%H%M"), type="l", col="cyan4"))
+
+df_flux %>% filter(as.Date(time) >= as.Date("2020-06-01") &
+                 as.Date(time) <= as.Date("2020-06-03") ) %>% 
+  with(points(GPP_NT_VUT_REF~time, type="l", col="cyan4"))
+
+df_flux %>% filter(as.Date(time) >= as.Date("2020-06-01") &
+                 as.Date(time) <= as.Date("2020-06-03") ) %>% 
+  with(points(GPP_DT_VUT_REF~time, type="l", col="yellow3"))
 ```
 
 Compare the two daily versions
@@ -91,12 +98,11 @@ df_flux_daily %>%
 df_flux_daily2 %>% 
   with(points(GPP~as.POSIXct(date, tz= "GMT"), type="l", col="cyan4"))
 
+df_flux_daily %>% 
+  with(plot(GPP_DT_VUT_REF~as.POSIXct(TIMESTAMP, tz = "GMT"), type="l", col="yellow3"))
+
 df_flux_daily2 %>% filter(as.POSIXct(date, tz= "GMT") > as.POSIXct("2010-01-01")) %>% filter(LAI<10) %>%  
   with(plot(LAI~as.POSIXct(date, tz= "GMT"), type="l", col="cyan4"))
-
-
-df_flux_daily %>% 
-  with(plot(GPP_DT_VUT_REF~as.POSIXct(TIMESTAMP, tz = "GMT"), type="l", col="black"))
 
 ```
 
@@ -107,32 +113,32 @@ df_flux_daily %>%
 This aggregating function averages all variables over an interval of three hours centred at the time of maximum PPFD
 
 ```{r}
-aggregate_daily = function(df){
+aggregate_daily_fluxnet = function(df){
   # df %>% with(plot(SWdown~as.POSIXct(time), type="l"))
-  maxppfd = df %>% filter(SWdown == max(SWdown))
+  maxppfd = df %>% filter(SW_IN_F_MDS == max(SW_IN_F_MDS))
   max_t = as.POSIXct(maxppfd$time[1], tz="GMT")
   df_aroundmax = df %>% filter(as.POSIXct(time, tz="GMT") < (max_t + 3*3600) & 
                                as.POSIXct(time, tz="GMT") > (max_t - 3*3600) )
   # df_aroundmax %>% with(points(SWdown~as.POSIXct(time)), col="blue")
-  df_mean = df_aroundmax %>% group_by(IGBP_veg_short) %>% summarize_all(.funs = mean) # the group_by in this line is just to preserve the non-numeric IGBP_veg_short field
+  df_mean = df_aroundmax %>% select(-TIMESTAMP_START, -TIMESTAMP_END) %>% summarize_all(.funs = mean)
   df_mean
 }
 ```
 
 
 ```{r}
-test.3day = df_lsm %>% filter(as.Date(time) >= as.Date("2020-06-01") &
+test.3day = df_flux %>% filter(as.Date(time) >= as.Date("2020-06-01") &
                  as.Date(time) <= as.Date("2020-06-03") ) 
 
-test.1day = df_lsm %>% filter(as.Date(time) == as.Date("2020-06-01"))
+test.1day = df_flux %>% filter(as.Date(time) == as.Date("2020-06-01"))
 
-test.3day.daily.custom = test.3day %>% group_by(as.Date(time)) %>% do(aggregate_daily(.))
+test.3day.daily.custom = test.3day %>% group_by(as.Date(time)) %>% do(aggregate_daily_fluxnet(.))
 
-test.3day %>% select(time, SWdown, Tair, VPD, LAI, FPAR, GPP) %>% 
+test.3day %>% select(time, SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, LAI, FPAR, GPP_DT_VUT_REF) %>% 
   melt("time") %>% 
   mutate(type="hourly") %>% 
   rbind(test.3day.daily.custom %>% ungroup() %>% 
-          select(time, SWdown, Tair, VPD, LAI, FPAR, GPP) %>% 
+          select(time, SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, LAI, FPAR, GPP_DT_VUT_REF) %>% 
           melt("time") %>% 
           mutate(type="daily")
   ) %>% 
@@ -151,10 +157,10 @@ Daily aggregation takes a good 10 mins. So here, the daily timeseries is saved i
 ```{r}
 recompute_daily_ts = F
 if (recompute_daily_ts){
-  df_daily = df_lsm %>% group_by(as.Date(time)) %>% do(aggregate_daily(.))
-  df_daily %>% write.csv(file="~/Downloads/flux_data_kit_beta/df_daily.csv", row.names = F)
+  df_daily = df_flux %>% group_by(as.Date(time)) %>% do(aggregate_daily_fluxnet(.))
+  df_daily %>% write.csv(file="~/Downloads/flux_data_kit_beta/df_daily_fluxnet.csv", row.names = F)
 } else {
-  df_daily = read.csv(file="~/Downloads/flux_data_kit_beta/df_daily.csv")
+  df_daily = read.csv(file="~/Downloads/flux_data_kit_beta/df_daily_fluxnet.csv")
 }
 
 df_daily = df_daily %>% ungroup()
@@ -171,9 +177,9 @@ df_daily$FPAR[1] = first(na.omit(df_daily$FPAR))
 df_daily$FPAR[length(df_daily$FPAR)] = last(na.omit(df_daily$FPAR))
 df_daily$FPAR = zoo::na.approx(df_daily$FPAR)
 
-df_lsm %>% filter(as.Date(time) > as.Date("2010-01-01") & 
+df_flux %>% filter(as.Date(time) > as.Date("2010-01-01") & 
                   as.Date(time) < as.Date("2021-01-01") ) %>% 
-  select(time, GPP, SWdown, Tair, VPD, LAI, FPAR) %>% 
+  select(time, SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, LAI, FPAR, GPP_DT_VUT_REF) %>% 
   melt("time") %>% 
   ggplot(aes(y=value, x=as.POSIXct(time))) + 
   geom_line(col="aquamarine3") + 
@@ -184,7 +190,7 @@ df_lsm %>% filter(as.Date(time) > as.Date("2010-01-01") &
 
 df_daily %>% filter(as.Date(time) > as.Date("2011-01-01") & 
                     as.Date(time) < as.Date("2021-01-01") ) %>%
-  select(time, GPP, SWdown, Tair, VPD, LAI, FPAR) %>% 
+  select(time, SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, LAI, FPAR, GPP_DT_VUT_REF) %>% 
   melt("time") %>% 
   ggplot(aes(y=value, x=as.POSIXct(time))) + 
   geom_line(col="aquamarine4") + 
@@ -200,13 +206,19 @@ The acclimation timescale for photosynthesis ~14 days, so we need to take the ro
 
 
 ```{r}
-df_daily_rollmean = df_daily %>% select(SWdown, Tair, VPD, CO2air, elevation, Wind, FPAR, LAI)
-dt = (df_daily$time %>% as.POSIXct() %>% as.numeric() %>% diff())/86400 # time differences in days
-for (i in 2:nrow(df_daily)){
-  alpha = 1 - exp(-dt[i]/14)
-  df_daily_rollmean[i, ] = alpha*df_daily_rollmean[i, ] + (1-alpha)*df_daily_rollmean[i-1,]
+recompute_daily_rollmean_ts = F
+if (recompute_daily_rollmean_ts){
+  df_daily_rollmean = df_daily %>% select(SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, CO2_F_MDS, WS_F, FPAR, LAI)
+  dt = (df_daily$time %>% as.numeric() %>% diff())/86400 # time differences in days
+  for (i in 2:nrow(df_daily)){
+    alpha = 1 - exp(-dt[i]/14)
+    df_daily_rollmean[i, ] = alpha*df_daily_rollmean[i, ] + (1-alpha)*df_daily_rollmean[i-1,]
+  }
+  df_daily_rollmean$time = df_daily$time
+  df_daily_rollmean %>% write.csv(file="~/Downloads/flux_data_kit_beta/df_daily_fluxnet_rollmean.csv", row.names = F)
+} else {
+  df_daily_rollmean = read.csv(file="~/Downloads/flux_data_kit_beta/df_daily_fluxnet_rollmean.csv")
 }
-df_daily_rollmean$time = df_daily$time
 
 df_daily_rollmean %>% 
   filter(as.Date(time) > as.Date("2011-01-01") & 
@@ -215,7 +227,7 @@ df_daily_rollmean %>%
   melt("time") %>%
   mutate(type="rollavg") %>%
   rbind(df_daily %>% 
-          select(time, SWdown, Tair, VPD, CO2air, FPAR, LAI) %>% 
+          select(time, SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, CO2_F_MDS, FPAR, LAI) %>% 
           filter(as.Date(time) > as.Date("2011-01-01") & 
                  as.Date(time) < as.Date("2021-01-01")) %>% 
           melt("time") %>% 
@@ -284,7 +296,7 @@ par_cost = list(alpha=0.1, gamma=1);
 
 # K_ground = K_leaf * LAI
 # K_leaf for conifers ~ 0.16
-par_plant_leaf = list(conductivity=0.2e-16, psi50=-1.2, b=1);
+par_plant_leaf = list(conductivity=0.12e-16, psi50=-1.2, b=1);
 
 options = list(gs_method = "GS_IGF", 
                et_method = "ET_PM",
@@ -299,14 +311,14 @@ daily_rollmean_phydro = df_daily_rollmean %>%
          as.Date(time) < as.Date("2021-01-01")) %>% 
   group_by(time) %>% 
   summarize(
-    tc = Tair-273.16, 
-    ppfd = SWdown*2.04, 
-    vpd = VPD*100, 
-    co2 = CO2air, 
-    elv = elevation, 
+    tc = TA_F_MDS, 
+    ppfd = SW_IN_F_MDS*2.04, 
+    vpd = VPD_F_MDS*100, 
+    co2 = CO2_F_MDS, 
+    elv = df_lsm$elevation[1], 
     fapar = FPAR,
     lai = LAI,
-    vwind = Wind,
+    vwind = WS_F,
   )
 
 acc = daily_rollmean_phydro %>% 
@@ -331,10 +343,10 @@ acc  %>%
 df_daily %>% 
   filter(as.Date(time) > as.Date("2011-01-01") & 
          as.Date(time) < as.Date("2021-01-01")) %>% 
-  select(time, GPP) %>% 
+  select(time, GPP_DT_VUT_REF) %>% 
   left_join(acc) %>% 
   ggplot() + 
-  geom_line(aes(x=as.POSIXct(time), y=GPP)) + 
+  geom_line(aes(x=as.POSIXct(time), y=GPP_DT_VUT_REF)) + 
   geom_line(aes(x=as.POSIXct(time), y=a), col="red") + 
   theme_classic()
 
@@ -357,14 +369,18 @@ gapfill = function(v){
   zoo::na.approx(v)
 }
 
-df_flux_daily2$LAI[df_flux_daily2$LAI > 10] = NA
-df_flux_daily2$LAI = gapfill(df_flux_daily2$LAI)
+df_flux_daily_mean = df_flux %>% 
+  select(time, SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, CO2_F_MDS, FPAR, LAI, WS_F, GPP_NT_VUT_REF, GPP_DT_VUT_REF) %>% 
+  group_by(as.Date(time)) %>% summarize_all(.funs = mean)
 
-df_flux_daily2$FPAR[df_flux_daily2$FPAR > 1] = NA
-df_flux_daily2$FPAR[df_flux_daily2$FPAR < 0] = NA
-df_flux_daily2$FPAR = gapfill(df_flux_daily2$FPAR)
+df_flux_daily_mean$LAI[df_flux_daily_mean$LAI > 10] = NA
+df_flux_daily_mean$LAI = gapfill(df_flux_daily_mean$LAI)
 
-df_flux_daily2 %>% select(time, LAI, FPAR) %>% 
+df_flux_daily_mean$FPAR[df_flux_daily_mean$FPAR > 1] = NA
+df_flux_daily_mean$FPAR[df_flux_daily_mean$FPAR < 0] = NA
+df_flux_daily_mean$FPAR = gapfill(df_flux_daily_mean$FPAR)
+
+df_flux_daily_mean %>% select(time, LAI, FPAR) %>% 
   melt("time") %>% 
   ggplot(aes(y=value, x=as.POSIXct(time))) + 
   geom_line(col="aquamarine4") + 
@@ -376,19 +392,19 @@ df_flux_daily2 %>% select(time, LAI, FPAR) %>%
 
 ```{r}
 
-daily_fulldaymean_phydro = df_flux_daily2 %>% 
+daily_fulldaymean_phydro = df_flux_daily_mean %>% 
   filter(as.Date(time) > as.Date("2011-01-01") & 
          as.Date(time) < as.Date("2021-01-01")) %>% 
   group_by(time) %>% 
   summarize(
-    tc = Tair-273.16, 
-    ppfd = SWdown*2.04, 
-    vpd = VPD*100, 
-    co2 = CO2air, 
-    elv = elevation, 
+    tc = TA_F_MDS, 
+    ppfd = SW_IN_F_MDS*2.04, 
+    vpd = VPD_F_MDS*100, 
+    co2 = CO2_F_MDS, 
+    elv = df_lsm$elevation[1], 
     fapar = FPAR,
     lai = LAI,
-    vwind = Wind,
+    vwind = WS_F,
   ) %>% 
   mutate(time = as.Date(time)) 
 
@@ -416,49 +432,116 @@ inst  %>%
   theme(strip.background = element_rect(color = "white", size = 1))+
   facet_wrap(~variable, scales = "free")
 
-df_flux_daily2 %>% 
+df_flux_daily_mean %>% 
   filter(as.Date(time) > as.Date("2011-01-01") & 
          as.Date(time) < as.Date("2021-01-01")) %>% 
-  select(time, GPP) %>%
+  select(time, GPP_DT_VUT_REF) %>%
   mutate(time = as.Date(time)) %>% 
   left_join(inst) %>% 
   # filter(a>0) %>% 
   ggplot() + 
-  geom_line(aes(x=as.POSIXct(time), y=GPP)) + 
+  geom_line(aes(x=as.POSIXct(time), y=GPP_DT_VUT_REF)) + 
   geom_line(aes(x=as.POSIXct(time), y=a), col="red", alpha=0.7) + 
   theme_classic()
 
 ```
 
 ```{r}
-df_flux_daily2 %>% 
+df_flux_daily_mean %>% 
   filter(as.Date(time) > as.Date("2011-01-01") & 
          as.Date(time) < as.Date("2021-01-01")) %>% 
-  select(time, GPP) %>%
+  select(time, GPP_DT_VUT_REF) %>%
   mutate(time = as.Date(time)) %>% 
   left_join(inst) %>% 
   # filter(a>0) %>% 
   ggplot() + 
-  geom_point(aes(x=a, y=GPP)) +
+  geom_point(aes(x=a, y=GPP_DT_VUT_REF)) +
   geom_abline(slope=1, intercept = 0, col="red")+
   theme_classic()
 
-df_flux_daily2 %>% 
+df_flux_daily_mean %>% 
   filter(as.Date(time) > as.Date("2011-01-01") & 
          as.Date(time) < as.Date("2021-01-01")) %>% 
-  select(time, GPP, SWdown) %>%
+  select(time, GPP_DT_VUT_REF, SW_IN_F_MDS) %>%
   mutate(time = as.Date(time)) %>% 
   left_join(inst) %>% 
   # filter(a>0) %>% 
   ggplot() + 
-  geom_point(aes(x=a/(SWdown*2.04), y=GPP/(SWdown*2.04))) +
+  geom_point(aes(x=a/(SW_IN_F_MDS*2.04), y=GPP_DT_VUT_REF/(SW_IN_F_MDS*2.04))) +
   geom_abline(slope=1, intercept = 0, col="red")+
   theme_classic()+
   ylim(c(-0.1, 0.1))
 
 ```
 
+## Subdaily predictions
 
+```{r}
+test.6day = df_flux %>% filter(as.Date(time) >= as.Date("2015-06-01") &
+                 as.Date(time) <= as.Date("2015-06-12") ) 
+
+acc_physio_day = acc_physio %>% mutate(day = as.Date(time)) %>% select(-time)
+
+df_phydro_subdaily = 
+  test.6day %>% mutate(day = as.Date(time)) %>% 
+  group_by(time) %>% 
+  summarize(
+    tc = TA_F_MDS, 
+    ppfd = SW_IN_F_MDS*2.04, 
+    vpd = VPD_F_MDS*100, 
+    co2 = CO2_F_MDS, 
+    elv = df_lsm$elevation[1], 
+    fapar = FPAR,
+    lai = LAI,
+    vwind = WS_F,
+    time = time,
+    day = day
+  ) %>% 
+  left_join(acc_physio_day) 
+  
+df_phydro_subdaily %>% 
+  select(-day) %>% 
+  melt("time") %>% 
+  ggplot(aes(y=value, x=as.POSIXct(time))) + 
+  geom_line(col="aquamarine4") + 
+  geom_vline(xintercept = 25, col="pink") + 
+  theme_classic() +
+  theme(strip.background = element_rect(color = "white", size = 1))+
+  facet_wrap(~variable, scales = "free")
+
+```
+
+```{r}
+inst.subdaily = df_phydro_subdaily %>% 
+  purrr::pmap_dfr(.f = rphydro_instantaneous_analytical_r, 
+                   kphio = 0.087, 
+                   psi_soil = 0, 
+                   rdark = 0.015, 
+                   par_plant = par_plant_leaf, 
+                   par_cost = par_cost, 
+                   options = options %>% list_modify(et_method = "ET_DIFFUSION")) %>% 
+  mutate(time = df_phydro_subdaily$time)
+  
+
+inst.subdaily  %>% 
+  melt("time") %>% 
+  ggplot(aes(y=value, x=as.POSIXct(time))) + 
+  geom_line(col="aquamarine4") + 
+  geom_vline(xintercept = 25, col="pink") + 
+  theme_classic() +
+  theme(strip.background = element_rect(color = "white", size = 1))+
+  facet_wrap(~variable, scales = "free")
+
+test.6day %>%
+  left_join(inst.subdaily) %>% 
+  # filter(a>0) %>% 
+  ggplot() + 
+  geom_line(aes(x=as.POSIXct(time), y=GPP_DT_VUT_REF), col="yellow3") + 
+  # geom_line(aes(x=as.POSIXct(time), y=GPP_NT_VUT_REF), col="black") + 
+  geom_line(aes(x=as.POSIXct(time), y=a), col="red", alpha=0.7) + 
+  theme_classic()
+
+```
 
 <!-- ```{r} -->
 <!-- library(rphydro) -->

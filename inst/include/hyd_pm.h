@@ -64,6 +64,8 @@ inline double calc_gs_pm(double Q, double ga, ParEnv par_env){
 	double Q_energy = Q * (par_env.lv / 55.5);
 
 	double den = par_env.epsilon*par_env.Rn + (par_env.rho*par_env.cp/par_env.gamma)*ga*par_env.vpd - (1+par_env.epsilon)*Q_energy; 
+	den = fmax(den, 0);
+
 	double gw = ga * Q_energy / den; // stomatal conductance to water [m s-1]
 
 	double gs = gw / gs_conv(par_env.tc, par_env.patm); // stomatal conductance to CO2 [mol m-2 s-1]
