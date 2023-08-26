@@ -8,7 +8,9 @@ class ParPlant{
 	double conductivity;
 	double psi50;
 	double b;
-	
+
+	double tchome = 25;
+
 	ParPlant(double _conductivity, double _psi50, double _b){
 		conductivity = _conductivity;
 		psi50 = _psi50;

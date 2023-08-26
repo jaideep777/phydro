@@ -29,7 +29,7 @@ class ParPhotosynth{
 	double fT_jmax;
 	double fT_rd;
 
-	ParPhotosynth(double _tc, double _patm, double _kphio, double _co2, double _ppfd, double _fapar, double _rdark25,
+	ParPhotosynth(double _tc, double _patm, double _kphio, double _co2, double _ppfd, double _fapar, double _rdark25, double _tcgrowth, double _tchome,
 				  FtempVcmaxJmaxMethod _ftemp_vj_method = FV_kumarathunge19, 
 				  FtempRdMethod        _ftemp_rd_method = FR_heskel16, 
 				  FtempBrMethod        _ftemp_br_method = FB_atkin15){
@@ -38,8 +38,8 @@ class ParPhotosynth{
 		ftemp_rd_method = _ftemp_rd_method;
 		ftemp_br_method = _ftemp_br_method;
 
-		fT_vcmax = calc_ftemp_inst_vcmax(_tc, _tc, 25.0, ftemp_vj_method);
-		fT_jmax  = calc_ftemp_inst_jmax(_tc, _tc, _tc, 25, ftemp_vj_method);
+		fT_vcmax = calc_ftemp_inst_vcmax(_tc, _tcgrowth, 25.0, ftemp_vj_method);
+		fT_jmax  = calc_ftemp_inst_jmax(_tc, _tcgrowth, _tchome, 25, ftemp_vj_method);
 		fT_rd    = calc_ftemp_inst_rd(_tc, _ftemp_rd_method);
 
 		kmm = calc_kmm(_tc, _patm);

@@ -43,11 +43,11 @@ class ParControl{
 };
 
 
-inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
+inline PHydroResult phydro_analytical(double tc, double tg, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);
 
-	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
+	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tg, par_plant.tchome, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd, ppfd/2, vwind);
 	if (par_control.scale_alpha) par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
 	par_env.gs_method = par_control.gs_method;
@@ -90,11 +90,11 @@ inline PHydroResult phydro_analytical(double tc, double ppfd, double vpd, double
 }
 
 
-inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax25, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
+inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);
 
-	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
+	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tg, par_plant.tchome, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd, ppfd/2, vwind);
 	if (par_control.scale_alpha) par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
 	par_env.gs_method = par_control.gs_method;
@@ -143,11 +143,11 @@ inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax2
 
 namespace phydro{
 
-inline PHydroResult phydro_numerical(double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
+inline PHydroResult phydro_numerical(double tc, double tg, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);
 
-	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
+	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tg, par_plant.tchome, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd, ppfd/2, vwind);
 	if (par_control.scale_alpha) par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
 	par_env.gs_method = par_control.gs_method;
@@ -185,11 +185,11 @@ inline PHydroResult phydro_numerical(double tc, double ppfd, double vpd, double 
 }
 
 
-inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25, double tc, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
+inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);
 
-	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
+	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tg, par_plant.tchome, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd, ppfd/2, vwind);
 	if (par_control.scale_alpha) par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
 	par_env.gs_method = par_control.gs_method;

@@ -58,18 +58,18 @@ class ParEnv{
 
 	void print(){
 		std::cout << "Env:\n";
-		std::cout << "   tc = " << tc << "\n";     // Temperature [degC]
-		std::cout << "   patm = " << patm << "\n";   // Atmospheric pressure [Pa]
-		std::cout << "   vpd = " << vpd << "\n";    // VPD [Pa]
-		std::cout << "   Rn = " << Rn << "\n";     // net radiation [w m-2]
-		std::cout << "   v_wind = " << v_wind << "\n"; // Wind speed [m s-1]
-		std::cout << "   viscosity_water = " << viscosity_water << "\n";  // [Pa s]
-		std::cout << "   density_water = " << density_water << "\n";    // [kg m-3]
-		std::cout << "   rho = " << rho << "\n";       // density of air [kg m-3]
-		std::cout << "   cp = " << cp << "\n";	      // specific heat capacity of moist air 
-		std::cout << "   gamma = " << gamma << "\n";     // psychrometric constant
-		std::cout << "   epsilon = " << epsilon << "\n";   // slope of saturation-pressure - temp curve
-		std::cout << "   lv = " << lv << "\n";        // latent heat of vaporization of water
+		std::cout << "   tc = " << tc << " [degC]\n";     // Temperature [degC]
+		std::cout << "   patm = " << patm << " [Pa]\n";   // Atmospheric pressure [Pa]
+		std::cout << "   vpd = " << vpd << " [Pa]\n";    // VPD [Pa]
+		std::cout << "   Rn = " << Rn << " [w m-2]\n";     // net radiation [w m-2]
+		std::cout << "   v_wind = " << v_wind << " [m s-1]\n"; // Wind speed [m s-1]
+		std::cout << "   viscosity_water = " << viscosity_water << " [Pa s]\n";  // [Pa s]
+		std::cout << "   density_water = " << density_water << " [kg m-3]\n";    // [kg m-3]
+		std::cout << "   rho = " << rho << " [kg m-3]\n";       // density of air [kg m-3]
+		std::cout << "   cp = " << cp << " [J kg-1 K-1]\n";	      // specific heat capacity of moist air 
+		std::cout << "   gamma = " << gamma << " [Pa K-1]\n";     // psychrometric constant
+		std::cout << "   epsilon = " << epsilon << " [Pa K-1]\n";   // slope of saturation-pressure - temp curve
+		std::cout << "   lv = " << lv << " [J kg-1]\n";        // latent heat of vaporization of water
 	}
 };
 
