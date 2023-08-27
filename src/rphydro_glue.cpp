@@ -82,7 +82,6 @@ inline Rcpp::List PHydroResult_to_List(const phydro::PHydroResult& res){
 	           Named("jmax") = res.jmax,
 	           Named("dpsi") = res.dpsi,
 	           Named("psi_l") = res.psi_l,
-	           Named("profit") = 0,
 	           Named("mc") = res.mc,
 	           Named("mj") = res.mj,
 	           Named("gammastar") = res.gammastar,
@@ -92,7 +91,8 @@ inline Rcpp::List PHydroResult_to_List(const phydro::PHydroResult& res){
 	           Named("rd") = res.rd,
 	           Named("isVcmaxLimited") = res.isVcmaxLimited,
 	           Named("ac") = res.ac,
-	           Named("aj") = res.aj
+	           Named("aj") = res.aj,
+			   Named("le") = res.le
 	       );
 }
 

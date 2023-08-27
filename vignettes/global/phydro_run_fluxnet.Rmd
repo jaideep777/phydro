@@ -44,13 +44,15 @@ df_flux = df_flux %>%
 
 site_meta = read.csv(file = paste0("~/Downloads/flux_data_kit_beta/",sitename,"_meta.csv"))
 
+load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_flux_daytime_mean.Rdata"))
+
 load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_phydro_input_acclim.Rdata"))
 
 load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_phydro_input_daily_24hr_mean.Rdata"))
 
 load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_phydro_input_subdaily.Rdata"))
 
-load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_flux_daytime_rollmean_7.Rdata"))
+load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_flux_daytime_rollmean_14.Rdata"))
 
 load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_flux_24hr_mean.Rdata"))
 
@@ -100,7 +102,7 @@ rphydro_analytical_r = function(tc, tgrowth, ppfd, vpd,
                                 kphio, psi_soil, rdark,
                                 vwind, par_plant_leaf, par_cost,
                                 options, lai, ...){
-  par_plant_crown = par_plant_leaf %>% list_modify(conductivity = par_plant_leaf$conductivity * lai)
+  par_plant_crown = par_plant_leaf %>% list_modify(conductivity = par_plant_leaf$conductivity) #*lai)
   rphydro::rphydro_analytical(tc, tgrowth, ppfd, vpd,
                               co2, elv, fapar,
                               kphio, psi_soil, rdark,
@@ -118,7 +120,7 @@ rphydro_instantaneous_analytical_r = function(vcmax25, jmax25,
                                 vwind, par_plant_leaf, par_cost,
                                 options, lai, ...){
 
-  par_plant_crown = par_plant_leaf %>% list_modify(conductivity = par_plant_leaf$conductivity * lai)
+  par_plant_crown = par_plant_leaf %>% list_modify(conductivity = par_plant_leaf$conductivity) #*lai)
   rphydro::rphydro_instantaneous_analytical(vcmax25, jmax25,
                               tc, tgrowth, ppfd, vpd,
                               co2, elv, fapar,
@@ -143,15 +145,22 @@ par_cost = list(alpha=0.1, gamma=1);
 
 # K_ground = K_leaf * LAI
 # K_leaf for conifers ~ 0.16
-par_plant_leaf = list(conductivity=0.3e-16, psi50=-1.2, b=1, quantile(phydro_input_subdaily$tc, c(.75)));
+par_plant_leaf_pm = list(conductivity=0.35e-16, psi50=-1.2, b=1, tchome = quantile(phydro_input_subdaily$tc, c(.75)))
+
+par_plant_leaf_diff = list(conductivity=0.6e-16, psi50=-1.2, b=1, tchome = quantile(phydro_input_subdaily$tc, c(.75)))
 
 options = list(gs_method = "GS_IGF",
-               et_method = "ET_PM",
+               et_method = "ET_DIFFUSION",
                ftemp_vj_method = "FV_kumarathunge19",
                ftemp_rd_method = "FR_heskel16",
                ftemp_br_method = "FB_atkin15",
                scale_alpha = F)
 
+if (options$et_method == "ET_DIFFUSON"){
+  par_plant_leaf = par_plant_leaf_diff
+} else {
+  par_plant_leaf = par_plant_leaf_pm
+}
 
 acc = phydro_input_acclim %>%
   mutate(elv = site_meta$elevation) %>% 
@@ -174,7 +183,7 @@ acc  %>%
   theme(strip.background = element_rect(color = "white", size = 1))+
   facet_wrap(~variable, scales = "free")
 
-df_flux_24hr_mean %>%
+df_daytime %>%
   filter(date > as.Date("2011-01-01") &
          date < as.Date("2021-01-01")) %>%
   select(date, GPP_DT_VUT_REF) %>%
@@ -185,10 +194,9 @@ df_flux_24hr_mean %>%
   theme_classic()
 
 
-
 ```
 
-### Instantaneous response
+### Instantaneous daily predictions
 
 Now, we use vcmax and jmax obtained from the acclimating model to force the instantaneous model.
 
@@ -315,7 +323,7 @@ inst.subdaily = test.6day %>%
                    elv = site_meta$elevation,
                    par_plant = par_plant_leaf,
                    par_cost = par_cost,
-                   options = options %>% list_modify(et_method = "ET_DIFFUSION")) %>%
+                   options = options) %>%
   mutate(time = test.6day$time,
          date = test.6day$date)
 ```
@@ -400,16 +408,46 @@ inst.subdaily %>%
   ggplot() +
   geom_line(aes(x=date, y=gpp), col="yellow3") +
   # geom_line(aes(x=as.POSIXct(time), y=GPP_NT_VUT_REF), col="black") +
-  geom_line(aes(x=date, y=a), col="red", alpha=0.7) +
+  geom_line(aes(x=date, y=a), col="black", alpha=0.7) +
   theme_classic()
 
+dats = inst.subdaily %>% 
+  left_join(df_flux) %>%
+  mutate(doy = lubridate::yday(date)) %>% 
+  group_by(doy) %>% 
+  summarize(gpp = mean(GPP_DT_VUT_REF, na.rm=T),
+            gpp_mod = mean(a, na.rm=T),
+            gpp_sd = sd(GPP_DT_VUT_REF, na.rm=T),
+            a_sd = sd(a, na.rm=T),
+            temp_80 = quantile(TA_F_MDS, probs = 0.8, na.rm=T),
+            lai = mean(LAI, na.rm=T))
 
-inst.subdaily %>% 
+dats_lue = inst.subdaily %>% 
+  left_join(df_flux) %>%
+  mutate(doy = lubridate::yday(date)) %>% 
+  filter(a > 0 & SW_IN_F_MDS > 100) %>% 
+  group_by(doy) %>% 
+  summarize(lue_mod = mean(a/(SW_IN_F_MDS), na.rm=T),
+            lue_obs = mean(GPP_DT_VUT_REF/SW_IN_F_MDS, na.rm=T))
+
+par(mfrow=c(4,1), mar=c(2,4,1,1), oma=c(1,1,1,1))
+dats %>% with(matplot(y=cbind(gpp,gpp_mod), x=doy, type="l", col=c("yellow3", "black"), lty=1))
+dats_lue %>% with(matplot(y=cbind(lue_obs,lue_mod), x=doy, type="l", col=c("yellow3", "black"), lty=1))
+dats %>% with(plot(temp_80~doy, type="l", col="orange"))
+abline(h=10, col="grey")
+dats %>% with(plot(lai~doy, type="l", col="darkgreen", ylim=c(0,3)))
+
+
+d = inst.subdaily %>% 
   left_join(df_flux) %>%
   group_by(date) %>% 
-  summarize(gpp = mean(GPP_DT_VUT_REF),
-            a = mean(a)) %>% 
-  drop_na %>% 
+  summarize(gpp = mean(GPP_DT_VUT_REF, na.rm=T),
+            a = mean(a, na.rm=T),
+            LE = mean(LE_F_MDS, na.rm=T),
+            le = mean(le, na.rm=T)) %>% 
+  drop_na 
+
+d %>% 
   mutate(density = get_density(a, gpp, n=100)) %>% 
   ggplot() +
   geom_point(aes(x=a, y=gpp, colour=density)) +
@@ -417,30 +455,16 @@ inst.subdaily %>%
   scale_color_viridis_c() +
   theme_classic()
 
-
-inst.subdaily %>% 
-  # filter(date >= "2015-08-21" & date <= "2015-08-27") %>% 
-  filter(date >= "2013-04-21" & date <= "2013-04-27") %>% 
-  select(-date) %>% 
-  left_join(df_flux) %>%
-  # filter(a>0) %>%
-  ggplot() +
-  geom_line(aes(x=time, y=GPP_DT_VUT_REF), col="yellow3") +
-  # geom_line(aes(x=as.POSIXct(time), y=GPP_NT_VUT_REF), col="black") +
-  geom_line(aes(x=time, y=a), col="red", alpha=0.7) +
+d %>% 
+  mutate(density = get_density(le, LE, n=100)) %>% 
+  ggplot(aes(x=le, y=LE)) +
+  geom_point(aes(colour=density)) +
+  geom_smooth(method = "lm", col="grey")+
+  geom_abline(slope=1, intercept = 0, col="red") +
+  scale_color_viridis_c() +
   theme_classic()
 
 
-inst.subdaily %>% 
-  filter(date >= "2015-08-21" & date <= "2015-08-27") %>% 
-  select(-date) %>% 
-  left_join(df_flux) %>%
-  # filter(a>0) %>%
-  ggplot() +
-  geom_line(aes(x=time, y=GPP_NT_VUT_REF), col="yellow3") +
-  # geom_line(aes(x=as.POSIXct(time), y=GPP_NT_VUT_REF), col="black") +
-  geom_line(aes(x=time, y=a), col="red", alpha=0.7) +
-  theme_classic()
 ```
 
 
