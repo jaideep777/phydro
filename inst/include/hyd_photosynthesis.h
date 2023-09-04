@@ -15,15 +15,15 @@ class ParPhotosynth{
 	double kmm;
 	double gammastar;
 	double phi0;
-	double ca;
+	double ca;     // Partial pressure of CO2 [Pa]
 	double delta;  // TODO: Replace name with brd / rdark
 
 	FtempVcmaxJmaxMethod ftemp_vj_method;
 	FtempRdMethod        ftemp_rd_method;
 	FtempBrMethod        ftemp_br_method;
 
-	double Iabs;
-	double patm;
+	double Iabs;  // Net absorbed PAR [umol m-2 s-1]
+	double patm;  // Atmospheric pressure [Pa]
 
 	double fT_vcmax;
 	double fT_jmax;
@@ -92,12 +92,12 @@ inline ACi calc_assim_rubisco_limited(double _gs, double vcmax, ParPhotosynth pa
 
 }
 
-
+// FIXME: rewrite in terms of J and Jmax
 inline ACi calc_assim_light_limited(double _gs, double jmax, ParPhotosynth par_photosynth){
 	double ca = par_photosynth.ca;             // ca is in Pa
 	double gs = _gs * 1e6/par_photosynth.patm;  // convert to umol/m2/s/Pa
 
-	gs += 1e-12;
+	gs += 1e-12; // FIXME: delete?
 
 	double d = par_photosynth.delta;
 

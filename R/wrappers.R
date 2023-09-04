@@ -8,3 +8,4 @@ rr_calc_ftemp_inst_vcmax = function(tc, tg, tref, method){
 rr_calc_ftemp_inst_jmax = function(tc, tg, th, tref, method){
   r_calc_ftemp_inst_jmax(tc, tg, th, tref, method)
 }
+

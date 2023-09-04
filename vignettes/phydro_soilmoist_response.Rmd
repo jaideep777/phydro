@@ -29,6 +29,7 @@ fapar = 0.7;         # fraction
 rdark = 0.015;
 tc = 25;
 vwind = 3;
+netrad = ppfd/2
 
 par_cost = list(alpha=0.1, gamma=1);
 par_plant = list(conductivity=3e-17, psi50=-2, b=2);
@@ -36,17 +37,18 @@ options = list(gs_method = "GS_IGF",
                et_method = "ET_DIFFUSION",
                ftemp_vj_method = "FV_kumarathunge19",
                ftemp_rd_method = "FR_heskel16",
-               ftemp_br_method = "FB_atkin15")
+               ftemp_br_method = "FB_atkin15",
+               scale_alpha = F)
 ```
 
 ## Acclimating response
 
 ```{r}
-dat = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
+dat = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
 ```
 
 ```{r}
-df.m <- dat %>% select(-profit) %>% melt("psi_soil")
+df.m <- dat %>% melt("psi_soil")
 
 ggplot(df.m, aes(y=value, x=psi_soil)) + 
   geom_line(col="aquamarine4") + 
@@ -61,9 +63,9 @@ ggplot(df.m, aes(y=value, x=psi_soil)) +
 ```{r}
 acc = dat %>% filter(psi_soil == 0)
 
-dat_inst = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_instantaneous_analytical(acc$vcmax25, acc$jmax25, tc, ppfd, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
+dat_inst = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_instantaneous_analytical(acc$vcmax25, acc$jmax25, tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
 
-df.m1 <- dat_inst %>% select(-profit) %>% melt("psi_soil")
+df.m1 <- dat_inst %>% melt("psi_soil")
 
 ggplot(df.m1, aes(y=value, x=psi_soil)) + 
   geom_line(col="aquamarine4") + 
@@ -85,11 +87,11 @@ abline(v=0, col="pink")
 ## Use approx gs calculation
 
 ```{r}
-dat_apx = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, list_modify(options, gs_method = "GS_APX2")))) %>% unnest_wider(dat)
+dat_apx = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, list_modify(options, gs_method = "GS_APX2")))) %>% unnest_wider(dat)
 ```
 
 ```{r}
-df.m2 <- dat_apx %>% select(-profit) %>% melt("psi_soil")
+df.m2 <- dat_apx %>% melt("psi_soil")
 
 ggplot(df.m2, aes(y=value, x=psi_soil)) + 
   geom_line(col="aquamarine4") + 
@@ -141,13 +143,14 @@ options = list(gs_method = "GS_IGF",
                et_method = "ET_PM",
                ftemp_vj_method = "FV_kumarathunge19",
                ftemp_rd_method = "FR_heskel16",
-               ftemp_br_method = "FB_atkin15")
+               ftemp_br_method = "FB_atkin15",
+               scale_alpha = F)
 
-dat_pml = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
+dat_pml = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
 ```
 
 ```{r}
-df.pml <- dat_pml %>% select(-profit) %>% melt("psi_soil")
+df.pml <- dat_pml %>% melt("psi_soil")
 
 ggplot(df.pml, aes(y=value, x=psi_soil)) + 
   geom_line(col="aquamarine4") + 
@@ -180,13 +183,14 @@ options = list(gs_method = "GS_IGF",
                et_method = "ET_PM",
                ftemp_vj_method = "FV_kumarathunge19",
                ftemp_rd_method = "FR_heskel16",
-               ftemp_br_method = "FB_atkin15")
+               ftemp_br_method = "FB_atkin15",
+               scale_alpha = F)
 
-dat_pml2 = list(psi_soil = seq(-6,0,length.out=50), vwind=exp(seq(log(0.01),log(10),length.out=10))) %>% cross_df() %>% mutate(dat = purrr::map2(.x=psi_soil, .y=vwind, .f = ~rphydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, .x, rdark, .y, par_plant, par_cost, options))) %>% unnest_wider(dat)
+dat_pml2 = list(psi_soil = seq(-6,0,length.out=50), vwind=exp(seq(log(0.01),log(10),length.out=10))) %>% cross_df() %>% mutate(dat = purrr::map2(.x=psi_soil, .y=vwind, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, .y, par_plant, par_cost, options))) %>% unnest_wider(dat)
 ```
 
 ```{r fig.width=9}
-dat_pml2 %>% select(-profit) %>% melt(c("psi_soil", "vwind")) %>% 
+dat_pml2 %>% melt(c("psi_soil", "vwind")) %>% 
   ggplot(aes(y=value, x=psi_soil, col=vwind, group=vwind)) + 
     scale_colour_gradient2(low = "red", high="blue", mid = "grey70", midpoint=0, trans="log") +
     geom_line() + 

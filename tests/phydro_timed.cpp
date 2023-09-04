@@ -56,12 +56,12 @@ int main(){
 		par_control.gs_method = phydro::GS_IGF;
 		
 		auto t1 = std::chrono::high_resolution_clock::now();
-		phydro::phydro_numerical(tc, tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
+		phydro::phydro_numerical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t2 = std::chrono::high_resolution_clock::now();
 		time_num += (std::chrono::duration<double, std::micro> (t2 - t1)).count();
 			
 		auto t3 = std::chrono::high_resolution_clock::now();
-		phydro::phydro_analytical(tc, tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
+		phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t4 = std::chrono::high_resolution_clock::now();
 		time_ana += (std::chrono::duration<double, std::micro> (t4 - t3)).count();
 		
@@ -69,12 +69,12 @@ int main(){
 		par_control.gs_method = phydro::GS_QNG;
 		
 		auto t9 = std::chrono::high_resolution_clock::now();
-		phydro::phydro_numerical(tc, tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
+		phydro::phydro_numerical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t10 = std::chrono::high_resolution_clock::now();
 		time_num_qng += (std::chrono::duration<double, std::micro> (t10 - t9)).count();
 			
 		auto t11 = std::chrono::high_resolution_clock::now();
-		phydro::phydro_analytical(tc, tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
+		phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t12 = std::chrono::high_resolution_clock::now();
 		time_ana_qng += (std::chrono::duration<double, std::micro> (t12 - t11)).count();
 		
@@ -82,24 +82,24 @@ int main(){
 		par_control.gs_method = phydro::GS_APX;
 
 		auto t5 = std::chrono::high_resolution_clock::now();
-		phydro::phydro_numerical(tc, tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
+		phydro::phydro_numerical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t6 = std::chrono::high_resolution_clock::now();
 		time_num_apx += (std::chrono::duration<double, std::micro> (t6 - t5)).count();
 			
 		auto t7 = std::chrono::high_resolution_clock::now();
-		phydro::phydro_analytical(tc, tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
+		phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t8 = std::chrono::high_resolution_clock::now();
 		time_ana_apx += (std::chrono::duration<double, std::micro> (t8 - t7)).count();
 
 		par_control.gs_method = phydro::GS_APX2;
 		
 		auto t13 = std::chrono::high_resolution_clock::now();
-		phydro::phydro_numerical(tc, tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
+		phydro::phydro_numerical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t14 = std::chrono::high_resolution_clock::now();
 		time_num_apx2 += (std::chrono::duration<double, std::micro> (t14- t13)).count();
 			
 		auto t15 = std::chrono::high_resolution_clock::now();
-		phydro::phydro_analytical(tc, tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
+		phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t16 = std::chrono::high_resolution_clock::now();
 		time_ana_apx2 += (std::chrono::duration<double, std::micro> (t16 - t15)).count();
 

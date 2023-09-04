@@ -25,14 +25,13 @@ library(reshape2)
 ## Get data
 
 ```{r read_input_data}
-sitename = "CH-Dav"
-
+siteID = "CH-Dav" 
 
 list = list.files("~/codes/FluxDataKit/R/")
 a = map(paste0("~/codes/FluxDataKit/R/", list), source)
 
 df_flux = fdk_convert_lsm(
-  site="CH-Dav",
+  site=siteID,
   path="~/Downloads/flux_data_kit_beta/fluxes/",
   fluxnet_format = T,
 )
@@ -42,19 +41,19 @@ df_flux = df_flux %>%
   mutate(date = as.Date(time))
 
 
-site_meta = read.csv(file = paste0("~/Downloads/flux_data_kit_beta/",sitename,"_meta.csv"))
+site_meta = read.csv(file = paste0("~/Downloads/flux_data_kit_beta/",siteID,"_meta.csv"))
 
-load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_flux_daytime_mean.Rdata"))
+load(paste0("~/Downloads/flux_data_kit_beta/",siteID,"_flux_daytime_mean.Rdata"))
 
-load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_phydro_input_acclim.Rdata"))
+load(paste0("~/Downloads/flux_data_kit_beta/",siteID,"_phydro_input_acclim.Rdata"))
 
-load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_phydro_input_daily_24hr_mean.Rdata"))
+load(paste0("~/Downloads/flux_data_kit_beta/",siteID,"_phydro_input_daily_24hr_mean.Rdata"))
 
-load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_phydro_input_subdaily.Rdata"))
+load(paste0("~/Downloads/flux_data_kit_beta/",siteID,"_phydro_input_subdaily.Rdata"))
 
-load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_flux_daytime_rollmean_14.Rdata"))
+load(paste0("~/Downloads/flux_data_kit_beta/",siteID,"_flux_daytime_rollmean_7.Rdata"))
 
-load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_flux_24hr_mean.Rdata"))
+load(paste0("~/Downloads/flux_data_kit_beta/",siteID,"_flux_24hr_mean.Rdata"))
 
 
 
@@ -84,9 +83,10 @@ plot_inputs = function(start_date, end_date){
     facet_wrap(~variable, scales = "free")
 }
 
-plot_inputs(start_date = as.Date("2015-06-01"), end_date = as.Date("2015-12-15"))
+t_extent = df_daytime %>% ungroup() %>% select(date) %>% as_tibble() %>% slice(1, nrow(.)) %>% pull(date)
+  
+plot_inputs(start_date = as.Date(t_extent[1]), end_date = as.Date(t_extent[2]))
 
-plot_inputs(start_date = as.Date("2015-06-01"), end_date = as.Date("2015-06-12"))
 
 ```
 
@@ -97,13 +97,13 @@ Make wrappers for phydro that will enable using `purrr::map` with dataframe
 ```{r phydro_wrappers}
 library(rphydro)
 
-rphydro_analytical_r = function(tc, tgrowth, ppfd, vpd,
+rphydro_analytical_r = function(tc, tgrowth, ppfd, netrad, vpd,
                                 co2, elv, fapar,
                                 kphio, psi_soil, rdark,
                                 vwind, par_plant_leaf, par_cost,
                                 options, lai, ...){
   par_plant_crown = par_plant_leaf %>% list_modify(conductivity = par_plant_leaf$conductivity) #*lai)
-  rphydro::rphydro_analytical(tc, tgrowth, ppfd, vpd,
+  rphydro::rphydro_analytical(tc, tgrowth, ppfd, netrad, vpd,
                               co2, elv, fapar,
                               kphio, psi_soil, rdark,
                               vwind,
@@ -114,7 +114,7 @@ rphydro_analytical_r = function(tc, tgrowth, ppfd, vpd,
 
 
 rphydro_instantaneous_analytical_r = function(vcmax25, jmax25,
-                                tc, tgrowth, ppfd, vpd,
+                                tc, tgrowth, ppfd, netrad, vpd,
                                 co2, elv, fapar,
                                 kphio, psi_soil, rdark,
                                 vwind, par_plant_leaf, par_cost,
@@ -122,7 +122,7 @@ rphydro_instantaneous_analytical_r = function(vcmax25, jmax25,
 
   par_plant_crown = par_plant_leaf %>% list_modify(conductivity = par_plant_leaf$conductivity) #*lai)
   rphydro::rphydro_instantaneous_analytical(vcmax25, jmax25,
-                              tc, tgrowth, ppfd, vpd,
+                              tc, tgrowth, ppfd, netrad, vpd,
                               co2, elv, fapar,
                               kphio, psi_soil, rdark,
                               vwind,
@@ -141,7 +141,7 @@ Note that this daily data is approximately daily maximum - averaged over 3hr int
 
 ```{r acclim_response}
 
-par_cost = list(alpha=0.1, gamma=1);
+par_cost = list(alpha=0.06, gamma=1);
 
 # K_ground = K_leaf * LAI
 # K_leaf for conifers ~ 0.16
@@ -184,8 +184,8 @@ acc  %>%
   facet_wrap(~variable, scales = "free")
 
 df_daytime %>%
-  filter(date > as.Date("2011-01-01") &
-         date < as.Date("2021-01-01")) %>%
+  filter(date > t_extent[1] &
+         date < t_extent[2]) %>%
   select(date, GPP_DT_VUT_REF) %>%
   left_join(acc) %>%
   ggplot() +
@@ -231,8 +231,8 @@ inst  %>%
   facet_wrap(~variable, scales = "free")
 
 df_flux_24hr_mean %>%
-  filter(date > as.Date("2011-01-01") &
-         date < as.Date("2021-01-01")) %>%
+  filter(date > t_extent[1] &
+         date < t_extent[2]) %>%
   select(date, GPP_DT_VUT_REF) %>%
   left_join(inst) %>%
   # filter(a>0) %>%
@@ -245,8 +245,8 @@ df_flux_24hr_mean %>%
 
 ```{r}
 df_flux_24hr_mean %>%
-  filter(date > as.Date("2011-01-01") &
-         date < as.Date("2021-01-01")) %>%
+  filter(date > t_extent[1] &
+         date < t_extent[2]) %>%
   select(date, GPP_DT_VUT_REF) %>%
   left_join(inst) %>%
   ggplot() +
@@ -255,8 +255,8 @@ df_flux_24hr_mean %>%
   theme_classic()
 
 df_flux_24hr_mean %>%
-  filter(date > as.Date("2011-01-01") &
-         date < as.Date("2021-01-01")) %>%
+  filter(date > t_extent[1] &
+         date < t_extent[2]) %>%
   select(date, GPP_DT_VUT_REF, SW_IN_F_MDS) %>%
   left_join(inst) %>%
   ggplot() +
@@ -271,46 +271,46 @@ df_flux_24hr_mean %>%
 
 ```{r subdaily_visualize_inputs}
 test.6day = phydro_input_subdaily %>% 
-  filter(date >= as.Date("2011-01-01") &
-         date <= as.Date("2019-12-31") )
+  filter(date > t_extent[1] &
+         date < t_extent[2])
 
-test.6day %>%
-  filter(date >= "2015-08-21" & date <= "2015-08-27") %>% 
-  select(-date) %>% 
-  left_join(df_flux %>% select(time, GPP_DT_VUT_REF, GPP_NT_VUT_REF)) %>% 
-  melt("time") %>%
-  ggplot(aes(y=value, x=as.POSIXct(time))) +
-  geom_line(col="aquamarine4") +
-  geom_vline(xintercept = 25, col="pink") +
-  theme_classic() +
-  theme(strip.background = element_rect(color = "white", size = 1))+
-  facet_wrap(~variable, scales = "free")
+# test.6day %>%
+#   filter(date >= "2005-08-21" & date <= "2005-08-27") %>% 
+#   select(-date) %>% 
+#   left_join(df_flux %>% select(time, GPP_DT_VUT_REF, GPP_NT_VUT_REF)) %>% 
+#   melt("time") %>%
+#   ggplot(aes(y=value, x=as.POSIXct(time))) +
+#   geom_line(col="aquamarine4") +
+#   geom_vline(xintercept = 25, col="pink") +
+#   theme_classic() +
+#   theme(strip.background = element_rect(color = "white", size = 1))+
+#   facet_wrap(~variable, scales = "free")
+# 
+# 
+# test.6day %>%
+#   filter(date >= "2013-04-21" & date <= "2013-04-27") %>% 
+#   select(-date) %>% 
+#   left_join(df_flux %>% select(time, GPP_DT_VUT_REF, GPP_NT_VUT_REF)) %>% 
+#   melt("time") %>%
+#   ggplot(aes(y=value, x=as.POSIXct(time))) +
+#   geom_line(col="aquamarine4") +
+#   geom_vline(xintercept = 25, col="pink") +
+#   theme_classic() +
+#   theme(strip.background = element_rect(color = "white", size = 1))+
+#   facet_wrap(~variable, scales = "free")
 
 
-test.6day %>%
-  filter(date >= "2013-04-21" & date <= "2013-04-27") %>% 
-  select(-date) %>% 
-  left_join(df_flux %>% select(time, GPP_DT_VUT_REF, GPP_NT_VUT_REF)) %>% 
-  melt("time") %>%
-  ggplot(aes(y=value, x=as.POSIXct(time))) +
-  geom_line(col="aquamarine4") +
-  geom_vline(xintercept = 25, col="pink") +
-  theme_classic() +
-  theme(strip.background = element_rect(color = "white", size = 1))+
-  facet_wrap(~variable, scales = "free")
-
-
-test.6day %>%
-  filter(date >= "2018-10-21" & date <= "2018-10-27") %>% 
-  select(-date) %>% 
-  left_join(df_flux %>% select(time, GPP_DT_VUT_REF, GPP_NT_VUT_REF)) %>% 
-  melt("time") %>%
-  ggplot(aes(y=value, x=as.POSIXct(time))) +
-  geom_line(col="aquamarine4") +
-  geom_vline(xintercept = 25, col="pink") +
-  theme_classic() +
-  theme(strip.background = element_rect(color = "white", size = 1))+
-  facet_wrap(~variable, scales = "free")
+# test.6day %>%
+#   filter(date >= "2018-10-21" & date <= "2018-10-27") %>% 
+#   select(-date) %>% 
+#   left_join(df_flux %>% select(time, GPP_DT_VUT_REF, GPP_NT_VUT_REF)) %>% 
+#   melt("time") %>%
+#   ggplot(aes(y=value, x=as.POSIXct(time))) +
+#   geom_line(col="aquamarine4") +
+#   geom_vline(xintercept = 25, col="pink") +
+#   theme_classic() +
+#   theme(strip.background = element_rect(color = "white", size = 1))+
+#   facet_wrap(~variable, scales = "free")
 ```
 
 ```{r inst_response_subdaily}
@@ -345,30 +345,30 @@ dat = inst.subdaily %>%
   left_join(df_flux)
 par(mfrow=c(6,1), mar=c(2,4,1,1), oma=c(1,1,1,1))
 dat %>% 
-  filter(date >= "2015-08-21" & date <= "2015-08-27") %>% 
+  filter(date >= "2005-08-21" & date <= "2005-08-27") %>% 
   with(plot(SW_IN_F_MDS~time, type="l", col="orange", ylim=c(0,1000), ylab="SW_IN"))
 dat %>% 
-  filter(date >= "2015-08-21" & date <= "2015-08-27") %>% 
+  filter(date >= "2005-08-21" & date <= "2005-08-27") %>% 
   with(matplot(y=cbind(a, GPP_DT_VUT_REF), x=time, type="l", lty=1, lwd=c(1,3), ylim=c(0,25), ylab="GPP", col=c("black",scales::alpha("green3", 0.5))))
 
 dat %>% 
-  filter(date >= "2013-04-21" & date <= "2013-04-27") %>% 
+  filter(date >= "2005-04-21" & date <= "2005-04-27") %>% 
   with(plot(SW_IN_F_MDS~time, type="l", col="orange", ylim=c(0,1000), ylab="SW_IN"))
 dat %>% 
-  filter(date >= "2013-04-21" & date <= "2013-04-27") %>% 
+  filter(date >= "2005-04-21" & date <= "2005-04-27") %>% 
   with(matplot(y=cbind(a, GPP_DT_VUT_REF), x=time, type="l", lty=1, lwd=c(1,3), ylim=c(0,25), ylab="GPP", col=c("black",scales::alpha("green3", 0.5))))
 
 dat %>% 
-  filter(date >= "2018-10-21" & date <= "2018-10-27") %>% 
+  filter(date >= "2005-10-21" & date <= "2005-10-27") %>% 
   with(plot(SW_IN_F_MDS~time, type="l", col="orange", ylim=c(0,1000), ylab="SW_IN"))
 dat %>% 
-  filter(date >= "2018-10-21" & date <= "2018-10-27") %>% 
+  filter(date >= "2005-10-21" & date <= "2005-10-27") %>% 
   with(matplot(y=cbind(a, GPP_DT_VUT_REF), x=time, type="l", lty=1, lwd=c(1,3), ylim=c(0,25), ylab="GPP", col=c("black",scales::alpha("green3", 0.5))))
 
 
 
 inst.subdaily  %>%
-  filter(date >= "2015-08-21" & date <= "2015-08-27") %>% 
+  filter(date >= "2005-08-21" & date <= "2005-08-27") %>% 
   melt("time") %>%
   ggplot(aes(y=value, x=time)) +
   geom_line(col="aquamarine4") +

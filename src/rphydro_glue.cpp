@@ -81,7 +81,7 @@ inline Rcpp::List PHydroResult_to_List(const phydro::PHydroResult& res){
 	           Named("vcmax") = res.vcmax,
 	           Named("jmax") = res.jmax,
 	           Named("dpsi") = res.dpsi,
-	           Named("psi_l") = res.psi_l,
+//	           Named("psi_l") = res.psi_l,
 	           Named("mc") = res.mc,
 	           Named("mj") = res.mj,
 	           Named("gammastar") = res.gammastar,
@@ -92,7 +92,8 @@ inline Rcpp::List PHydroResult_to_List(const phydro::PHydroResult& res){
 	           Named("isVcmaxLimited") = res.isVcmaxLimited,
 	           Named("ac") = res.ac,
 	           Named("aj") = res.aj,
-			   Named("le") = res.le
+			   Named("le") = res.le,
+			   Named("le_s_wet") = res.le_s_wet
 	       );
 }
 
@@ -131,39 +132,39 @@ inline double r_calc_ftemp_inst_vcmax(double tcleaf, double tcgrowth, double tcr
 // -------------------------------------------------------------
 //  Wrappers for Phydro calls taking R lists instead of parameter objects
 // -------------------------------------------------------------
-inline Rcpp::List rphydro_analytical(double tc, double tg, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, Rcpp::List par_plant, Rcpp::List par_cost, Rcpp::List options){
+inline Rcpp::List rphydro_analytical(double tc, double tg, double ppfd, double netrad, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, Rcpp::List par_plant, Rcpp::List par_cost, Rcpp::List options){
 	ParControl par_control = listToParControl(options);
 	ParPlant par_plant_cpp = listToParPlant(par_plant);
 	ParCost  par_cost_cpp(par_cost["alpha"], par_cost["gamma"]);
 
-	return PHydroResult_to_List(phydro_analytical(tc, tg, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant_cpp, par_cost_cpp, par_control));
+	return PHydroResult_to_List(phydro_analytical(tc, tg, ppfd, netrad, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant_cpp, par_cost_cpp, par_control));
 }
 
-inline Rcpp::List rphydro_instantaneous_analytical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, Rcpp::List par_plant, Rcpp::List par_cost, Rcpp::List options){
+inline Rcpp::List rphydro_instantaneous_analytical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double netrad, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, Rcpp::List par_plant, Rcpp::List par_cost, Rcpp::List options){
 	ParControl par_control = listToParControl(options);
 	ParPlant par_plant_cpp = listToParPlant(par_plant);
 	ParCost  par_cost_cpp(par_cost["alpha"], par_cost["gamma"]);
 
-	return PHydroResult_to_List(phydro_instantaneous_analytical(vcmax25, jmax25, tc, tg, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant_cpp, par_cost_cpp, par_control));
+	return PHydroResult_to_List(phydro_instantaneous_analytical(vcmax25, jmax25, tc, tg, ppfd, netrad, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant_cpp, par_cost_cpp, par_control));
 }
 
 
 #ifndef PHYDRO_ANALYTICAL_ONLY
 
-inline Rcpp::List rphydro_numerical(double tc, double tg, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, Rcpp::List par_plant, Rcpp::List par_cost, Rcpp::List options){
+inline Rcpp::List rphydro_numerical(double tc, double tg, double ppfd, double netrad, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, Rcpp::List par_plant, Rcpp::List par_cost, Rcpp::List options){
 	ParControl par_control = listToParControl(options);
 	ParPlant par_plant_cpp = listToParPlant(par_plant);
 	ParCost  par_cost_cpp(par_cost["alpha"], par_cost["gamma"]);
 
-	return PHydroResult_to_List(phydro_numerical(tc, tg, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant_cpp, par_cost_cpp, par_control));
+	return PHydroResult_to_List(phydro_numerical(tc, tg, ppfd, netrad, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant_cpp, par_cost_cpp, par_control));
 }
 
-inline Rcpp::List rphydro_instantaneous_numerical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, Rcpp::List par_plant, Rcpp::List par_cost, Rcpp::List options){
+inline Rcpp::List rphydro_instantaneous_numerical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double netrad, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, Rcpp::List par_plant, Rcpp::List par_cost, Rcpp::List options){
 	ParControl par_control = listToParControl(options);
 	ParPlant par_plant_cpp = listToParPlant(par_plant);
 	ParCost  par_cost_cpp(par_cost["alpha"], par_cost["gamma"]);
 
-	return PHydroResult_to_List(phydro_instantaneous_numerical(vcmax25, jmax25, tc, tg, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant_cpp, par_cost_cpp, par_control));
+	return PHydroResult_to_List(phydro_instantaneous_numerical(vcmax25, jmax25, tc, tg, ppfd, netrad, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant_cpp, par_cost_cpp, par_control));
 }
 
 #endif

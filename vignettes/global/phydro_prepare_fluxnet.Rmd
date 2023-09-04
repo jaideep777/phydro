@@ -25,7 +25,7 @@ FluxDataKit installation throws an error. Just run the R files manually for now.
 
 ```{r, echo = F, results='hide', message=FALSE, warning=F}
 list = list.files("~/codes/FluxDataKit/R/")
-map(paste0("~/codes/FluxDataKit/R/", list), source)
+a = map(paste0("~/codes/FluxDataKit/R/", list), source, verbose=F)
 ```
 
 ## Read and convert data in the desired format
@@ -33,8 +33,10 @@ map(paste0("~/codes/FluxDataKit/R/", list), source)
 Read NetCDF data in Fluxnet format
 
 ```{r read_fluxnet_format}
+siteID = "FI-Hyy" 
+
 df_flux = fdk_convert_lsm(
-  site="CH-Dav",
+  site=siteID,
   path="~/Downloads/flux_data_kit_beta/fluxes/",
   fluxnet_format = T,
 )
@@ -50,7 +52,7 @@ Read same data in LSM format
 
 ```{r read_lsm_format}
 df_lsm = fdk_convert_lsm(
-  site="CH-Dav",
+  site=siteID,
   path="~/Downloads/flux_data_kit_beta/fluxes/",
   fluxnet_format = F,
 )
@@ -64,7 +66,7 @@ Read metadata
 
 ```{r read_metadata}
 df_meta = fdk_convert_lsm(
-  site="CH-Dav",
+  site=siteID,
   path="~/Downloads/flux_data_kit_beta/fluxes/",
   fluxnet_format = T,
   meta_data = T
@@ -78,7 +80,7 @@ Downsample to daily using routine provided in FluxDataKit
 ```{r aggregate_fdk}
 df_flux_daily_fdk = fdk_downsample_fluxnet(
   df_flux,
-  site = "CH-Dav") %>% 
+  site = siteID) %>% 
   mutate(time = as.POSIXct(TIMESTAMP, tz = "GMT", format="%Y-%m-%d")) %>% 
   mutate(date = as.Date(time))
 
@@ -87,6 +89,7 @@ df_flux_daily_fdk = fdk_downsample_fluxnet(
 # df_flux_daily = df_lsm %>% mutate(date = as.Date(time, tz="GMT")) %>% 
 #   group_by(date) %>% summarize_all(.funs = mean)
 
+t_extent = df_flux_daily_fdk %>% select(time, date, NETRAD, LAI) %>% drop_na %>% slice(1, nrow(.)) %>% pull(time)
 ```
 
 Downsample to daily by simple averaging over dates
@@ -97,8 +100,6 @@ df_lsm_daily = df_lsm %>% group_by(date) %>% summarize_all(.funs = mean) %>%
 
 df_flux_24hr_mean = df_flux %>% group_by(date) %>% summarize_all(.funs = mean) %>% 
   mutate(time = as.POSIXct(date))
-
-save(df_flux_24hr_mean, file = paste0("~/Downloads/flux_data_kit_beta/",df_meta[[1]]$sitename,"_flux_24hr_mean.Rdata"))
 
 ```
 
@@ -112,7 +113,10 @@ gapfill = function(v){
 }
 
 # Impute missing/unrealistic LAI and FAPAR values using linear interpolation
+dLAI = c(0,diff(df_flux_24hr_mean$LAI))
+
 df_flux_24hr_mean$LAI[df_flux_24hr_mean$LAI > 10] = NA
+df_flux_24hr_mean$LAI[which(abs(dLAI) > 1)] = NA
 df_flux_24hr_mean$LAI = gapfill(df_flux_24hr_mean$LAI)
 
 df_flux_24hr_mean$FPAR[df_flux_24hr_mean$FPAR > 1] = NA
@@ -123,22 +127,28 @@ df_flux_24hr_mean$FPAR = gapfill(df_flux_24hr_mean$FPAR)
 lai_fpar_daily = df_flux_24hr_mean %>% select(date, LAI, FPAR)
 df_flux = df_flux %>% select(-LAI, -FPAR) %>% left_join(lai_fpar_daily)
 
+save(df_flux_24hr_mean, file = paste0("~/Downloads/flux_data_kit_beta/",df_meta[[1]]$sitename,"_flux_24hr_mean.Rdata"))
 ```
 
+
+```{r}
+plot(df_flux_daily_fdk$NETRAD~df_flux_daily_fdk$date, type="l")
+plot(df_flux_daily_fdk$LAI~df_flux_daily_fdk$date, type="l")
+```
 
 Compare Fluxnet and LSM formatted values
 
 ```{r plot_comparison}
-df_lsm %>% filter(date >= as.Date("2020-06-01") &
-                  date <= as.Date("2020-06-03") ) %>% 
+df_lsm %>% filter(date >= as.Date("2011-06-01") &
+                  date <= as.Date("2011-06-03") ) %>% 
   with(plot(GPP~as.POSIXct(time), type="l"))
 
-df_flux %>% filter(date >= as.Date("2020-06-01") &
-                   date <= as.Date("2020-06-03") ) %>% 
+df_flux %>% filter(date >= as.Date("2011-06-01") &
+                   date <= as.Date("2011-06-03") ) %>% 
   with(points(GPP_NT_VUT_REF~time, type="l", col="cyan4"))
 
-df_flux %>% filter(date >= as.Date("2020-06-01") &
-                   date <= as.Date("2020-06-03") ) %>% 
+df_flux %>% filter(date >= as.Date("2011-06-01") &
+                   date <= as.Date("2011-06-03") ) %>% 
   with(points(GPP_DT_VUT_REF~time, type="l", col="yellow3"))
 ```
 
@@ -164,12 +174,12 @@ Let's check that gapfilling of LAI has worked in both daily and subdaily dataset
 
 ```{r check_LAI_gapfilling}
 
-df_lsm_daily %>% filter(date > as.Date("2014-08-01") & date < as.Date("2015-02-01")) %>% 
-  with(plot(LAI~time, type="l", col="cyan4", ylim=c(0,5))) 
-df_flux_24hr_mean %>% filter(date > as.Date("2014-08-01") & date < as.Date("2015-02-01")) %>% 
-  with(points(LAI~time, type="l", col="blue", ylim=c(0,5))) 
-df_flux %>% filter(date > as.Date("2014-08-01") & date < as.Date("2015-02-01")) %>% 
-  with(points(LAI~time, type="l", col="pink", ylim=c(0,5))) 
+df_lsm_daily %>% filter(date > as.Date("2010-08-01") & date < as.Date("2011-02-01")) %>% 
+  with(plot(LAI~time, type="l", col="cyan4", ylim=c(0,11))) 
+df_flux_24hr_mean %>% filter(date > as.Date("2010-08-01") & date < as.Date("2011-02-01")) %>% 
+  with(points(LAI~time, type="o", col="blue", ylim=c(0,11))) 
+df_flux %>% filter(date > as.Date("2010-08-01") & date < as.Date("2011-02-01")) %>% 
+  with(points(LAI~time, type="l", col="pink", ylim=c(0,11))) 
 
 ```
 
@@ -194,18 +204,18 @@ aggregate_daily_fluxnet = function(df){
 
 
 ```{r test_daytime_aggregation}
-test.3day = df_flux %>% filter(date >= as.Date("2020-06-01") &
-                               date <= as.Date("2020-06-03") ) 
+test.3day = df_flux %>% filter(date >= as.Date("2011-06-01") &
+                               date <= as.Date("2011-06-03") ) 
 
-test.1day = df_flux %>% filter(date == as.Date("2020-06-01"))
+test.1day = df_flux %>% filter(date == as.Date("2011-06-01"))
 
 test.3day.daily.custom = test.3day %>% group_by(date) %>% do(aggregate_daily_fluxnet(.))
 
-test.3day %>% select(time, SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, GPP_NT_VUT_REF, GPP_DT_VUT_REF, LE_F_MDS, LAI, FPAR) %>% 
+test.3day %>% select(time, SW_IN_F_MDS, NETRAD, TA_F_MDS, VPD_F_MDS, GPP_NT_VUT_REF, GPP_DT_VUT_REF, LE_F_MDS, LAI, FPAR) %>% 
   melt("time") %>% 
   mutate(type="hourly") %>% 
   rbind(test.3day.daily.custom %>% ungroup() %>% 
-          select(time, SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, GPP_NT_VUT_REF, GPP_DT_VUT_REF, LE_F_MDS, LAI, FPAR) %>% 
+          select(time, SW_IN_F_MDS, NETRAD, TA_F_MDS, VPD_F_MDS, GPP_NT_VUT_REF, GPP_DT_VUT_REF, LE_F_MDS, LAI, FPAR) %>% 
           melt("time") %>% 
           mutate(type="daily")
   ) %>% 
@@ -222,7 +232,7 @@ test.3day %>% select(time, SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, GPP_NT_VUT_REF, GPP
 Daily aggregation takes a good 10 mins. So here, the daily timeseries is saved in a CSV file upon computation and read in subsequent knits. A flag is used to specify whether the daily timeseries should be recomputed - this is necessary if the underlying half-hourly data changes OR if the aggregate_daily() function changes.
 
 ```{r daytime_aggregation_for_all_data}
-recompute_daily_ts = F
+recompute_daily_ts = T
 outfile = paste0("~/Downloads/flux_data_kit_beta/",df_meta[[1]]$sitename,"_flux_daytime_mean.Rdata")
 if (recompute_daily_ts){
   df_daytime = df_flux %>% group_by(date) %>% do(aggregate_daily_fluxnet(.))
@@ -248,9 +258,9 @@ df_daytime = df_daytime %>% ungroup()
 #   facet_wrap(~variable, scales = "free") + 
 #   ggtitle("Half hourly data")
 
-df_daytime %>% filter(date > as.Date("2011-01-01") & 
-                      date < as.Date("2021-01-01") ) %>%
-  select(time, SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, GPP_NT_VUT_REF, GPP_DT_VUT_REF, LE_F_MDS, LAI, FPAR) %>% 
+df_daytime %>% filter(date > as.Date("2005-01-01") & 
+                      date < as.Date("2011-01-01") ) %>%
+  select(time, SW_IN_F_MDS, NETRAD, TA_F_MDS, VPD_F_MDS, GPP_NT_VUT_REF, GPP_DT_VUT_REF, LE_F_MDS, LAI, FPAR) %>% 
   melt("time") %>% 
   ggplot(aes(y=value, x=as.POSIXct(time))) + 
   geom_line(col="aquamarine4") + 
@@ -270,7 +280,7 @@ recompute_daily_rollmean_ts = T
 delta_T = 7 # Averaging timescale (days)
 outfile_rollmean = paste0("~/Downloads/flux_data_kit_beta/",df_meta[[1]]$sitename,"_flux_daytime_rollmean_",delta_T,".Rdata")
 if (recompute_daily_rollmean_ts){
-  df_daily_rollmean = df_daytime %>% select(SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, CO2_F_MDS, WS_F, FPAR, LAI)
+  df_daily_rollmean = df_daytime %>% select(SW_IN_F_MDS, NETRAD, TA_F_MDS, VPD_F_MDS, CO2_F_MDS, WS_F, FPAR, LAI)
   dt = (df_daytime$time %>% as.numeric() %>% diff())/86400 # time differences in days
   for (i in 2:nrow(df_daytime)){
     alpha = 1 - exp(-dt[i]/delta_T)
@@ -284,16 +294,16 @@ if (recompute_daily_rollmean_ts){
 }
 
 df_daily_rollmean %>% 
-  filter(date > as.Date("2011-01-01") & 
-         date < as.Date("2021-01-01")) %>% 
+  filter(date > as.Date("2005-01-01") & 
+         date < as.Date("2011-01-01")) %>% 
   as_tibble() %>%
   select(-date) %>% 
   melt("time") %>%
   mutate(type="rollavg") %>%
   rbind(df_daytime %>% 
-          select(time, SW_IN_F_MDS, TA_F_MDS, VPD_F_MDS, CO2_F_MDS, FPAR, LAI) %>% 
-          filter(as.Date(time) > as.Date("2011-01-01") & 
-                 as.Date(time) < as.Date("2021-01-01")) %>% 
+          select(time, SW_IN_F_MDS, NETRAD, TA_F_MDS, VPD_F_MDS, CO2_F_MDS, FPAR, LAI) %>% 
+          filter(as.Date(time) > as.Date("2005-01-01") & 
+                 as.Date(time) < as.Date("2011-01-01")) %>% 
           melt("time") %>% 
           mutate(type="orig")) %>%
   ggplot(aes(y=value, x=as.POSIXct(time))) +
@@ -309,8 +319,8 @@ df_daily_rollmean %>%
 
 ```{r}
 phydro_input_acclim = df_daily_rollmean %>% 
-  filter(date > as.Date("2011-01-01") & 
-         date < as.Date("2021-01-01")) %>% 
+  filter(date > as.Date(t_extent[1]) & 
+         date < as.Date(t_extent[2])) %>% 
   group_by(time) %>% 
   summarize(
     tc = TA_F_MDS, 
@@ -320,7 +330,8 @@ phydro_input_acclim = df_daily_rollmean %>%
     fapar = FPAR,
     lai = LAI,
     vwind = WS_F,
-    tgrowth = TA_F_MDS
+    tgrowth = TA_F_MDS,
+    netrad = NETRAD
   ) %>% 
   mutate(date = as.Date(time)) %>% 
   ungroup()
@@ -328,8 +339,8 @@ phydro_input_acclim = df_daily_rollmean %>%
 save(phydro_input_acclim, file = paste0("~/Downloads/flux_data_kit_beta/",df_meta[[1]]$sitename,"_phydro_input_acclim.Rdata"))
 
 phydro_input_daily_24hr_mean = df_flux_24hr_mean %>% 
-  filter(date > as.Date("2011-01-01") & 
-         date < as.Date("2021-01-01")) %>% 
+  filter(date > as.Date(t_extent[1]) & 
+         date < as.Date(t_extent[2])) %>% 
   group_by(time) %>% 
   summarize(
     tc = TA_F_MDS, 
@@ -338,7 +349,8 @@ phydro_input_daily_24hr_mean = df_flux_24hr_mean %>%
     co2 = CO2_F_MDS, 
     fapar = FPAR,
     lai = LAI,
-    vwind = WS_F
+    vwind = WS_F,
+    netrad = NETRAD
   ) %>% 
   mutate(date = as.Date(time)) %>% 
   left_join(phydro_input_acclim %>% select(date, tgrowth)) %>% 
@@ -347,8 +359,8 @@ phydro_input_daily_24hr_mean = df_flux_24hr_mean %>%
 save(phydro_input_daily_24hr_mean, file = paste0("~/Downloads/flux_data_kit_beta/",df_meta[[1]]$sitename,"_phydro_input_daily_24hr_mean.Rdata"))
 
 phydro_input_subdaily = df_flux %>% 
-  filter(date > as.Date("2011-01-01") & 
-         date < as.Date("2021-01-01")) %>% 
+  filter(date > as.Date(t_extent[1]) & 
+         date < as.Date(t_extent[2])) %>% 
   group_by(time) %>% 
   summarize(
     tc = TA_F_MDS, 
@@ -357,7 +369,8 @@ phydro_input_subdaily = df_flux %>%
     co2 = CO2_F_MDS, 
     fapar = FPAR,
     lai = LAI,
-    vwind = WS_F
+    vwind = WS_F,
+    netrad = NETRAD
   ) %>% 
   mutate(date = as.Date(time)) %>% 
   left_join(phydro_input_acclim %>% select(date, tgrowth)) %>% 
@@ -391,9 +404,9 @@ plot_inputs = function(start_date, end_date){
     facet_wrap(~variable, scales = "free")
 }
 
-plot_inputs(start_date = as.Date("2015-06-01"), end_date = as.Date("2015-12-15"))
+plot_inputs(start_date = as.Date("2005-06-01"), end_date = as.Date("2005-12-15"))
 
-plot_inputs(start_date = as.Date("2015-06-01"), end_date = as.Date("2015-06-12"))
+plot_inputs(start_date = as.Date("2005-06-01"), end_date = as.Date("2005-06-12"))
 
 ```
 

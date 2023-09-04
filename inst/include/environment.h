@@ -40,6 +40,7 @@ class ParEnv{
 		calc_temp_dependencies();
 	}
 
+	// Note: Using separate constructor instead of default value for _v_wind because Rcpp cannot handle default values
 	ParEnv(double _tc, double _patm, double _vpd, double _Rn) : ParEnv(_tc, _patm, _vpd, _Rn, 3) { // global average value of v_wind
 	}
 

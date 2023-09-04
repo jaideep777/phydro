@@ -30,6 +30,7 @@ struct PHydroResult{
 	double ac;
 	double aj;
 	double le;
+	double le_s_wet;
 };
 
 
@@ -44,12 +45,12 @@ class ParControl{
 };
 
 
-inline PHydroResult phydro_analytical(double tc, double tg, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
+inline PHydroResult phydro_analytical(double tc, double tg, double ppfd, double netrad, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tg, par_plant.tchome, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
-	ParEnv        par_env(tc, pa, vpd, ppfd/2, vwind);
+	ParEnv        par_env(tc, pa, vpd, netrad, vwind);
 	if (par_control.scale_alpha) par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
@@ -87,18 +88,19 @@ inline PHydroResult phydro_analytical(double tc, double tg, double ppfd, double 
 	res.ac = a;
 	res.aj = a;
 	res.le = e * 0.018015 * par_env.lv; // e [mol m-2 s-1] * 0.01815 [kg mol-1] * lv [J kg-1] = J m-2 s-1 = W m-2
+	res.le_s_wet = (1-fapar)*netrad*(par_env.epsilon/(1+par_env.epsilon));
 
 	return res;
 
 }
 
 
-inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
+inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double netrad, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tg, par_plant.tchome, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
-	ParEnv        par_env(tc, pa, vpd, ppfd/2, vwind);
+	ParEnv        par_env(tc, pa, vpd, netrad, vwind);
 	if (par_control.scale_alpha) par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
@@ -132,6 +134,7 @@ inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax2
 	res.ac = calc_assim_rubisco_limited(gs, vcmax, par_photosynth).a;
 	res.aj = calc_assim_light_limited(gs, jmax, par_photosynth).a; 	
 	res.le = e * 0.018015 * par_env.lv; // e [mol m-2 s-1] * 0.01815 [kg mol-1] * lv [J kg-1] = J m-2 s-1 = W m-2
+	res.le_s_wet = (1-fapar)*netrad*(par_env.epsilon/(1+par_env.epsilon));
 
 	return res;
 
@@ -148,12 +151,12 @@ inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax2
 
 namespace phydro{
 
-inline PHydroResult phydro_numerical(double tc, double tg, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
+inline PHydroResult phydro_numerical(double tc, double tg, double ppfd, double netrad, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tg, par_plant.tchome, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
-	ParEnv        par_env(tc, pa, vpd, ppfd/2, vwind);
+	ParEnv        par_env(tc, pa, vpd, netrad, vwind);
 	if (par_control.scale_alpha) par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
@@ -186,18 +189,19 @@ inline PHydroResult phydro_numerical(double tc, double tg, double ppfd, double v
 	res.ac = aj.a;
 	res.aj = aj.a;
 	res.le = e * 0.018015 * par_env.lv; // e [mol m-2 s-1] * 0.01815 [kg mol-1] * lv [J kg-1] = J m-2 s-1 = W m-2
+	res.le_s_wet = (1-fapar)*netrad*(par_env.epsilon/(1+par_env.epsilon));
 
 	return res;
 
 }
 
 
-inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
+inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double netrad, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
 	double pa = calc_patm(elv);
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tg, par_plant.tchome, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
-	ParEnv        par_env(tc, pa, vpd, ppfd/2, vwind);
+	ParEnv        par_env(tc, pa, vpd, netrad, vwind);
 	if (par_control.scale_alpha) par_cost.alpha /= par_photosynth.fT_jmax; // convert alpha from cost of jmax to cost of jmax25
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
@@ -231,6 +235,7 @@ inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25
 	res.ac = calc_assim_rubisco_limited(gs, vcmax, par_photosynth).a;
 	res.aj = calc_assim_light_limited(gs, jmax, par_photosynth).a; 	
 	res.le = e * 0.018015 * par_env.lv; // e [mol m-2 s-1] * 0.01815 [kg mol-1] * lv [J kg-1] = J m-2 s-1 = W m-2
+	res.le_s_wet = (1-fapar)*netrad*(par_env.epsilon/(1+par_env.epsilon));
 
 	return res;
 
