@@ -130,6 +130,14 @@ inline DPsiBounds calc_dpsi_bound(double psi_soil, ParPlant par_plant, ParEnv pa
   //# cat(psi_soil, ":", exact, " ", approx_O2, " ", use_bound, "\n");
   double Iabs_bound = pn::zero(use_bound*0.001, use_bound*0.99, f1, 1e-6).root;
   
+  // If using PM, find max dpsi from max possible transpiration 
+  if (par_env.et_method == ET_PM){
+    double ga = calc_g_aero(par_plant.h_canopy, par_env.v_wind, par_plant.h_wind_measurement);
+    double Qmax = calc_max_transpiration_pm(ga, par_env);
+    double max_dpsi = calc_dpsi_from_sapflux(Qmax, psi_soil, par_plant, par_env);
+    Iabs_bound = fmin(max_dpsi, Iabs_bound);
+  }
+
   //# dpsi=seq(exact*0.001,exact*0.99, length.out=200);
   //# plot(y=sapply(X = dpsi, FUN = f1), x=dpsi, type="l");
   

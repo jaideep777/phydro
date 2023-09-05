@@ -25,24 +25,26 @@ library(reshape2)
 ## Get data
 
 ```{r read_input_data}
-sitename = "CH-Dav"
+sitename = "FI-Hyy"
 
 
 list = list.files("~/codes/FluxDataKit/R/")
 a = map(paste0("~/codes/FluxDataKit/R/", list), source)
 
-df_flux = fdk_convert_lsm(
-  site="CH-Dav",
-  path="~/Downloads/flux_data_kit_beta/fluxes/",
-  fluxnet_format = T,
-)
-
-df_flux = df_flux %>% 
-  mutate(time = as.POSIXct(TIMESTAMP_START, tz = "GMT", format="%Y%m%d%H%M")) %>% 
-  mutate(date = as.Date(time))
+# df_flux = fdk_convert_lsm(
+#   site="CH-Dav",
+#   path="~/Downloads/flux_data_kit_beta/fluxes/",
+#   fluxnet_format = T,
+# )
+# 
+# df_flux = df_flux %>% 
+#   mutate(time = as.POSIXct(TIMESTAMP_START, tz = "GMT", format="%Y%m%d%H%M")) %>% 
+#   mutate(date = as.Date(time))
 
 
 site_meta = read.csv(file = paste0("~/Downloads/flux_data_kit_beta/",sitename,"_meta.csv"))
+
+load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_flux_hh.Rdata"))
 
 load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_flux_daytime_mean.Rdata"))
 
@@ -52,7 +54,7 @@ load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_phydro_input_daily_24hr
 
 load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_phydro_input_subdaily.Rdata"))
 
-load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_flux_daytime_rollmean_14.Rdata"))
+load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_flux_daytime_rollmean_7.Rdata"))
 
 load(paste0("~/Downloads/flux_data_kit_beta/",sitename,"_flux_24hr_mean.Rdata"))
 
@@ -97,13 +99,13 @@ Make wrappers for phydro that will enable using `purrr::map` with dataframe
 ```{r phydro_wrappers}
 library(rphydro)
 
-rphydro_analytical_r = function(tc, tgrowth, ppfd, vpd,
+rphydro_analytical_r = function(tc, tgrowth, ppfd, netrad, vpd,
                                 co2, elv, fapar,
                                 kphio, psi_soil, rdark,
                                 vwind, par_plant_leaf, par_cost,
                                 options, lai, ...){
   par_plant_crown = par_plant_leaf %>% list_modify(conductivity = par_plant_leaf$conductivity) #*lai)
-  rphydro::rphydro_analytical(tc, tgrowth, ppfd, vpd,
+  rphydro::rphydro_analytical(tc, tgrowth, ppfd, netrad, vpd,
                               co2, elv, fapar,
                               kphio, psi_soil, rdark,
                               vwind,
@@ -114,7 +116,7 @@ rphydro_analytical_r = function(tc, tgrowth, ppfd, vpd,
 
 
 rphydro_instantaneous_analytical_r = function(vcmax25, jmax25,
-                                tc, tgrowth, ppfd, vpd,
+                                tc, tgrowth, ppfd, netrad, vpd,
                                 co2, elv, fapar,
                                 kphio, psi_soil, rdark,
                                 vwind, par_plant_leaf, par_cost,
@@ -122,7 +124,7 @@ rphydro_instantaneous_analytical_r = function(vcmax25, jmax25,
 
   par_plant_crown = par_plant_leaf %>% list_modify(conductivity = par_plant_leaf$conductivity) #*lai)
   rphydro::rphydro_instantaneous_analytical(vcmax25, jmax25,
-                              tc, tgrowth, ppfd, vpd,
+                              tc, tgrowth, ppfd, netrad, vpd,
                               co2, elv, fapar,
                               kphio, psi_soil, rdark,
                               vwind,
@@ -150,7 +152,7 @@ par_plant_leaf_pm = list(conductivity=0.37e-16, psi50=-1.2, b=1, tchome = quanti
 par_plant_leaf_diff = list(conductivity=0.6e-16, psi50=-1.2, b=1, tchome = quantile(phydro_input_subdaily$tc, c(.75)))
 
 options = list(gs_method = "GS_IGF",
-               et_method = "ET_DIFFUSION",
+               et_method = "ET_PM",
                ftemp_vj_method = "FV_kumarathunge19",
                ftemp_rd_method = "FR_heskel16",
                ftemp_br_method = "FB_atkin15",
@@ -174,7 +176,7 @@ acc = phydro_input_acclim %>%
   mutate(time = phydro_input_acclim$time,
          date = phydro_input_acclim$date)
 
-acc  %>%
+acc %>% select(-date) %>% 
   melt("time") %>%
   ggplot(aes(y=value, x=as.POSIXct(time))) +
   geom_line(col="aquamarine4") +
@@ -231,8 +233,8 @@ inst  %>%
   facet_wrap(~variable, scales = "free")
 
 df_flux_24hr_mean %>%
-  filter(date > as.Date("2011-01-01") &
-         date < as.Date("2021-01-01")) %>%
+  filter(date > as.Date("2001-01-01") &
+         date < as.Date("2011-01-01")) %>%
   select(date, GPP_DT_VUT_REF) %>%
   left_join(inst) %>%
   # filter(a>0) %>%
@@ -270,12 +272,13 @@ df_flux_24hr_mean %>%
 ## Subdaily predictions
 
 ```{r subdaily_visualize_inputs}
-test.6day = phydro_input_subdaily %>% 
-  filter(date >= as.Date("2011-01-01") &
-         date <= as.Date("2019-12-31") )
+dates = c("2015-08-21", "2013-04-21", "2018-10-21")
+dates = c("2002-08-21", "2002-04-21", "2002-10-21")
+
+test.6day = phydro_input_subdaily
 
 test.6day %>%
-  filter(date >= "2015-08-21" & date <= "2015-08-27") %>% 
+  filter(date >= dates[1] & date <= as.Date(dates[1])+6) %>% 
   select(-date) %>% 
   left_join(df_flux %>% select(time, GPP_DT_VUT_REF, GPP_NT_VUT_REF)) %>% 
   melt("time") %>%
@@ -288,7 +291,7 @@ test.6day %>%
 
 
 test.6day %>%
-  filter(date >= "2013-04-21" & date <= "2013-04-27") %>% 
+  filter(date >= dates[2] & date <= as.Date(dates[2])+6) %>% 
   select(-date) %>% 
   left_join(df_flux %>% select(time, GPP_DT_VUT_REF, GPP_NT_VUT_REF)) %>% 
   melt("time") %>%
@@ -301,7 +304,7 @@ test.6day %>%
 
 
 test.6day %>%
-  filter(date >= "2018-10-21" & date <= "2018-10-27") %>% 
+  filter(date >= dates[2] & date <= as.Date(dates[2])+6) %>% 
   select(-date) %>% 
   left_join(df_flux %>% select(time, GPP_DT_VUT_REF, GPP_NT_VUT_REF)) %>% 
   melt("time") %>%
@@ -316,6 +319,7 @@ test.6day %>%
 ```{r inst_response_subdaily}
 inst.subdaily = test.6day %>%
   left_join(acc_physio) %>% 
+  mutate(netrad = pmax(0, netrad)) %>% 
   purrr::pmap_dfr(.f = rphydro_instantaneous_analytical_r,
                    kphio = 0.087,
                    psi_soil = 0,
@@ -345,24 +349,24 @@ dat = inst.subdaily %>%
   left_join(df_flux)
 par(mfrow=c(6,1), mar=c(2,4,1,1), oma=c(1,1,1,1))
 dat %>% 
-  filter(date >= "2015-08-21" & date <= "2015-08-27") %>% 
+  filter(date >= dates[1] & date <= as.Date(dates[1])+6) %>% 
   with(plot(SW_IN_F_MDS~time, type="l", col="orange", ylim=c(0,1000), ylab="SW_IN"))
 dat %>% 
-  filter(date >= "2015-08-21" & date <= "2015-08-27") %>% 
+  filter(date >= dates[1] & date <= as.Date(dates[1])+6) %>% 
   with(matplot(y=cbind(a, GPP_DT_VUT_REF), x=time, type="l", lty=1, lwd=c(1,3), ylim=c(0,25), ylab="GPP", col=c("black",scales::alpha("green3", 0.5))))
 
 dat %>% 
-  filter(date >= "2013-04-21" & date <= "2013-04-27") %>% 
+  filter(date >= dates[2] & date <= as.Date(dates[2])+6) %>% 
   with(plot(SW_IN_F_MDS~time, type="l", col="orange", ylim=c(0,1000), ylab="SW_IN"))
 dat %>% 
-  filter(date >= "2013-04-21" & date <= "2013-04-27") %>% 
+  filter(date >= dates[2] & date <= as.Date(dates[2])+6) %>% 
   with(matplot(y=cbind(a, GPP_DT_VUT_REF), x=time, type="l", lty=1, lwd=c(1,3), ylim=c(0,25), ylab="GPP", col=c("black",scales::alpha("green3", 0.5))))
 
 dat %>% 
-  filter(date >= "2018-10-21" & date <= "2018-10-27") %>% 
+  filter(date >= dates[3] & date <= as.Date(dates[3])+6) %>% 
   with(plot(SW_IN_F_MDS~time, type="l", col="orange", ylim=c(0,1000), ylab="SW_IN"))
 dat %>% 
-  filter(date >= "2018-10-21" & date <= "2018-10-27") %>% 
+  filter(date >= dates[3] & date <= as.Date(dates[3])+6) %>% 
   with(matplot(y=cbind(a, GPP_DT_VUT_REF), x=time, type="l", lty=1, lwd=c(1,3), ylim=c(0,25), ylab="GPP", col=c("black",scales::alpha("green3", 0.5))))
 
 
@@ -444,7 +448,7 @@ d = inst.subdaily %>%
   summarize(gpp = mean(GPP_DT_VUT_REF, na.rm=T),
             a = mean(a, na.rm=T),
             LE = mean(LE_F_MDS, na.rm=T),
-            le = mean(le+0.55*le_s_wet, na.rm=T)) %>% 
+            le = mean(le+0.8*le_s_wet, na.rm=T)) %>% 
   drop_na 
 
 d %>% 

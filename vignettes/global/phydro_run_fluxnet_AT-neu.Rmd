@@ -25,7 +25,7 @@ library(reshape2)
 ## Get data
 
 ```{r read_input_data}
-siteID = "CH-Dav" 
+siteID = "AT-Neu" 
 
 list = list.files("~/codes/FluxDataKit/R/")
 a = map(paste0("~/codes/FluxDataKit/R/", list), source)
@@ -150,7 +150,7 @@ par_plant_leaf_pm = list(conductivity=0.37e-16, psi50=-1.2, b=1, tchome = quanti
 par_plant_leaf_diff = list(conductivity=0.6e-16, psi50=-1.2, b=1, tchome = quantile(phydro_input_subdaily$tc, c(.75)))
 
 options = list(gs_method = "GS_IGF",
-               et_method = "ET_DIFFUSION",
+               et_method = "ET_PM",
                ftemp_vj_method = "FV_kumarathunge19",
                ftemp_rd_method = "FR_heskel16",
                ftemp_br_method = "FB_atkin15",
@@ -316,6 +316,7 @@ test.6day = phydro_input_subdaily %>%
 ```{r inst_response_subdaily}
 inst.subdaily = test.6day %>%
   left_join(acc_physio) %>% 
+  mutate(netrad = pmax(netrad,0)) %>% 
   purrr::pmap_dfr(.f = rphydro_instantaneous_analytical_r,
                    kphio = 0.087,
                    psi_soil = 0,

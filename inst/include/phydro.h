@@ -108,7 +108,8 @@ inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax2
 	double vcmax = vcmax25 * par_photosynth.fT_vcmax;
 	double jmax  =  jmax25 * par_photosynth.fT_jmax;
 
-	auto dpsi_opt = pn::zero(0, 20, [&](double dpsi){return calc_dP_ddpsi(dpsi, vcmax, jmax, psi_soil, par_plant, par_env, par_photosynth, par_cost);}, 1e-6);
+	double  bound = calc_dpsi_bound_inst(psi_soil, par_plant, par_env, par_photosynth, par_cost);
+	auto dpsi_opt = pn::zero(0, 0.99*bound, [&](double dpsi){return calc_dP_ddpsi(dpsi, vcmax, jmax, psi_soil, par_plant, par_env, par_photosynth, par_cost);}, 1e-6);
 	double     gs = calc_gs(dpsi_opt.root, psi_soil, par_plant, par_env);
 	auto        A = calc_assimilation_limiting(vcmax, jmax, gs, par_photosynth); 	
 	double      e = calc_sapflux(dpsi_opt.root, psi_soil, par_plant, par_env);
