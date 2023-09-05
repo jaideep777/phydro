@@ -114,7 +114,10 @@ ParControl listToParControl(Rcpp::List options){
 
 ParPlant listToParPlant(Rcpp::List l){
 	ParPlant par_plant_cpp(l["conductivity"], l["psi50"], l["b"]);
+
 	if (l.containsElementNamed("tchome")) par_plant_cpp.tchome = l["tchome"];
+	if (l.containsElementNamed("h_canopy")) par_plant_cpp.h_canopy = l["h_canopy"];
+	if (l.containsElementNamed("h_wind_measurement")) par_plant_cpp.h_wind_measurement = l["h_wind_measurement"];
 	return par_plant_cpp;
 }
 
@@ -174,6 +177,7 @@ inline Rcpp::List rphydro_instantaneous_numerical(double vcmax25, double jmax25,
 
 
 RCPP_EXPOSED_CLASS(phydro::ParEnv);
+RCPP_EXPOSED_CLASS(phydro::ParPlant);
 
 using namespace phydro;
 
@@ -193,6 +197,21 @@ RCPP_MODULE(phydro_module) {
 		.field("Rn", &ParEnv::Rn)
 		.field("v_wind", &ParEnv::v_wind)
 	;
+
+	class_ <ParPlant>("ParPlant")
+		.constructor<double,double,double,double,double,double>()
+		.constructor<double,double,double>()
+		.method("print", &ParPlant::print)
+
+		.field("conductivity", &ParPlant::conductivity)
+		.field("psi50", &ParPlant::psi50)
+		.field("b", &ParPlant::b)
+		.field("tchome", &ParPlant::tchome)
+		.field("h_canopy", &ParPlant::h_canopy)
+		.field("h_wind_measurement", &ParPlant::h_wind_measurement)
+	;
+
+	function("listToParPlant", &listToParPlant);
 
 	// Temperature dependencies
 	function("calc_kmm", &calc_kmm);
@@ -214,6 +233,7 @@ RCPP_MODULE(phydro_module) {
 	function("calc_psychro", &calc_psychro);
 	function("calc_sat_slope", &calc_sat_slope);
 	function("calc_transpiration_pm", &calc_transpiration_pm);
+	function("calc_max_transpiration_pm", &calc_max_transpiration_pm);
 	function("calc_gs_pm", &calc_gs_pm);
 	function("calc_dE_dgs_pm", &calc_dE_dgs_pm);
 	function("calc_dE_dgs_pm_num", &calc_dE_dgs_pm_num);

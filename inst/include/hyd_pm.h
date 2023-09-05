@@ -55,6 +55,17 @@ inline double calc_transpiration_pm(double gs, double ga, ParEnv par_env){
 }
 
 
+// Calculate maximum possible PML transpiration for a given ga, calculated by setting gs = inf, [mol m-2 s-1]
+// ga   Aerodynamic conductance [m s-1]
+// Rn   Absorbed net radiation [W m-2]
+inline double calc_max_transpiration_pm(double ga, ParEnv par_env){
+
+	double latent_energy = (par_env.epsilon*par_env.Rn + (par_env.rho*par_env.cp/par_env.gamma)*ga*par_env.vpd) / (par_env.epsilon + 1); // latent energy W m-2 
+	double trans = latent_energy * (55.5 / par_env.lv); // W m-2 ---> mol m-2 s-1
+	return trans;
+}
+
+
 // Calculate PML stomatal conductance to CO2 [mol m-2 s-1]
 // Q    Sap flux [mol m-2 s-1]
 // ga   Aerodynamic conductance [m s-1]
@@ -64,7 +75,7 @@ inline double calc_gs_pm(double Q, double ga, ParEnv par_env){
 	double Q_energy = Q * (par_env.lv / 55.5);
 
 	double den = par_env.epsilon*par_env.Rn + (par_env.rho*par_env.cp/par_env.gamma)*ga*par_env.vpd - (1+par_env.epsilon)*Q_energy; 
-	den = fmax(den, 0);
+	//den = fmax(den, 0);
 
 	double gw = ga * Q_energy / den; // stomatal conductance to water [m s-1]
 

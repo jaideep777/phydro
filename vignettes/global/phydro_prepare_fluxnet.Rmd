@@ -134,6 +134,33 @@ save(df_flux_24hr_mean, file = paste0("~/Downloads/flux_data_kit_beta/",df_meta[
 ```{r}
 plot(df_flux_daily_fdk$NETRAD~df_flux_daily_fdk$date, type="l")
 plot(df_flux_daily_fdk$LAI~df_flux_daily_fdk$date, type="l")
+
+df_flux_daily_fdk %>% select(SW_IN_F_MDS, SW_OUT, LW_IN_F_MDS, LAI, FPAR, time) %>% 
+  mutate(albedo = SW_OUT/SW_IN_F_MDS) %>% 
+  melt("time") %>% 
+  ggplot(aes(y=value, x=as.POSIXct(time))) + 
+  geom_line(col="aquamarine4") + 
+  theme_classic() +
+  theme(strip.background = element_rect(color = "white", size = 1))+
+  facet_wrap(~variable, scales = "free")
+
+df_flux_daily_fdk %>% select(SW_IN_F_MDS, SW_OUT, LW_IN_F_MDS, LAI, P_F, time) %>% 
+  mutate(albedo = SW_OUT/SW_IN_F_MDS) %>% 
+  filter(albedo > 0 & albedo < 1) %>% 
+  ggplot(aes(y=albedo, x=as.numeric(format(time, "%m")))) + 
+  geom_point() + 
+  theme_classic() 
+
+df_flux_daily_fdk %>% select(SW_IN_F_MDS, SW_OUT, LW_IN_F_MDS, LAI, time) %>% 
+  mutate(albedo = SW_OUT/SW_IN_F_MDS) %>% 
+  filter(albedo > 0 & albedo < 1) %>% 
+  group_by(month=as.numeric(format(time, "%m"))) %>% 
+  summarize(albedo_mean = mean(albedo)) 
+
+
+df_flux_daily_fdk %>% select(LW_IN_F_MDS, TA_F_MDS, time) %>% 
+  ggplot(aes(x=TA_F_MDS, y=LW_IN_F_MDS)) +
+  geom_point()
 ```
 
 Compare Fluxnet and LSM formatted values

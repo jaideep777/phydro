@@ -4,6 +4,8 @@
 #include <stdexcept>
 
 #include "pn_integrator.h"
+#include "pn_zero.h"
+
 #include "hyd_params_classes.h"
 #include "environment.h"
 #include "hyd_pm.h"
@@ -105,6 +107,28 @@ inline double calc_sapflux(double dpsi, double psi_soil, ParPlant par_plant, Par
 	return E;
 }
 
+// sapflux [mol m-2 s-1]
+inline double calc_max_sapflux(double psi_soil, ParPlant par_plant, ParEnv par_env){
+	double K = scale_conductivity(par_plant.conductivity, par_env);
+	double E = K * -integral_P(1e20, psi_soil, par_plant, GS_IGF);
+	return E;
+}
+
+
+//                                 _ps-dpsi 
+// Calculate dpsi that solves    _/   K(psi') dpsi' = Q
+//                             ps
+inline double calc_dpsi_from_sapflux(double Q, double psi_soil, ParPlant par_plant, ParEnv par_env){
+	double Qmax = calc_max_sapflux(psi_soil, par_plant, par_env);
+	if (Q > Qmax) return 999999999;
+
+	auto f = [&](double _dpsi){
+		return calc_sapflux(_dpsi, psi_soil, par_plant, par_env) - Q;
+	};
+	double dpsi = pn::zero(0.0, 100, f, 1e-6).root;
+	return dpsi;
+}
+
 
 // Calculates regulated stomatal conducatnce given the leaf water potential, 
 // plant hydraulic traits, and the environment.
@@ -117,7 +141,7 @@ inline double calc_gs(double dpsi, double psi_soil, ParPlant par_plant, ParEnv p
 		gs = Q/1.6/D; 
 	}
 	else if (par_env.et_method == ET_PM){
-		double ga = calc_g_aero(20, par_env.v_wind, 20+2);
+		double ga = calc_g_aero(par_plant.h_canopy, par_env.v_wind, par_plant.h_wind_measurement);
 		gs = calc_gs_pm(Q, ga, par_env);
 	}
 	else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
@@ -163,7 +187,7 @@ inline double calc_dE_dgs(double dpsi, double psi_soil, ParPlant par_plant, ParE
 		return 1.6*D;
 	}
 	else if (par_env.et_method == ET_PM){
-		double ga = calc_g_aero(20, par_env.v_wind, 20+2);
+		double ga = calc_g_aero(par_plant.h_canopy, par_env.v_wind, par_plant.h_wind_measurement);
 		double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
 		double gs = calc_gs_pm(Q, ga, par_env);
 		return calc_dE_dgs_pm(gs, ga, par_env);

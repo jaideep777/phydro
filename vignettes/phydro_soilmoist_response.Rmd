@@ -199,3 +199,31 @@ dat_pml2 %>% melt(c("psi_soil", "vwind")) %>%
     facet_wrap(~variable, scales = "free")
 
 ```
+
+## Test effect of canopy and measurement heights
+
+```{r}
+dat_pml3 = list(psi_soil = seq(-6,0,length.out=50), h_canopy = seq(1,50,length.out=10)) %>% cross_df() %>% mutate(dat = purrr::map2(.x=psi_soil, .y=h_canopy, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant %>% list_modify(h_canopy = .y, h_wind_measurement = .y+10), par_cost, options))) %>% unnest_wider(dat)
+
+dat_pml3 %>% melt(c("psi_soil", "h_canopy")) %>% 
+  ggplot(aes(y=value, x=psi_soil, col=h_canopy, group=h_canopy)) + 
+    scale_colour_gradient2(low = "red", high="blue", mid = "grey70", midpoint=20) +
+    geom_line() + 
+    theme_classic() +
+    theme(strip.background = element_rect(color = "white", size = 1))+
+    facet_wrap(~variable, scales = "free")
+```
+
+## Test effect of canopy height with fixed measurement height
+
+```{r}
+dat_pml3 = list(psi_soil = seq(-6,0,length.out=50), h_canopy = seq(1,50,length.out=10)) %>% cross_df() %>% mutate(dat = purrr::map2(.x=psi_soil, .y=h_canopy, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant %>% list_modify(h_canopy = .y, h_wind_measurement = 60), par_cost, options))) %>% unnest_wider(dat)
+
+dat_pml3 %>% melt(c("psi_soil", "h_canopy")) %>% 
+  ggplot(aes(y=value, x=psi_soil, col=h_canopy, group=h_canopy)) + 
+    scale_colour_gradient2(low = "red", high="blue", mid = "grey70", midpoint=20) +
+    geom_line() + 
+    theme_classic() +
+    theme(strip.background = element_rect(color = "white", size = 1))+
+    facet_wrap(~variable, scales = "free")
+```
