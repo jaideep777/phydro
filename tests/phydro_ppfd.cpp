@@ -61,7 +61,7 @@ int main(){
 
 	for (auto ppfd : seq(200, 1500, 30)){
 
-		auto res = phydro::phydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost);
+		auto res = phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost);
 		
 		cout << setw(10) <<  ppfd      << "\t"; cout.flush();
 		cout << setw(10) <<  res.jmax  << "\t";

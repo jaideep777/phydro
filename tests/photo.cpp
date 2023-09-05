@@ -25,7 +25,7 @@ int main(){
 
 	double gs = 0.1;
 	
-	phydro::ParPhotosynth par_photosynth(tc, phydro::calc_patm(elv), kphio, co2, ppfd, fapar, rdark);
+	phydro::ParPhotosynth par_photosynth(tc, phydro::calc_patm(elv), kphio, co2, ppfd, fapar, rdark, tc, 25.0);
 
 	auto ac = phydro::calc_assim_rubisco_limited(gs, 30, par_photosynth);
 	auto aj = phydro::calc_assim_light_limited(gs, 100, par_photosynth);

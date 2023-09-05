@@ -19,7 +19,7 @@ int main(){
 	phydro::ParEnv E(tc, p, vpd, 1000/2);
 	E.gs_method = phydro::GS_IGF;
 	
-	phydro::ParPhotosynth ph(tc, p, kphio, co2, ppfd, fapar, rdark);
+	phydro::ParPhotosynth ph(tc, p, kphio, co2, ppfd, fapar, rdark, tc, 25.0);
 
 	auto t1 = std::chrono::high_resolution_clock::now();
 	int N = 10;

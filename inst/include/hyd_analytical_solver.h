@@ -55,15 +55,13 @@ inline double calc_dJ_ddpsi(double gsprime, double x, ParPhotosynth par_photosyn
 }
 
 
-inline double calc_x_from_dpsi(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env, ParPhotosynth par_photosynth, ParCost par_cost){
+inline double calc_x_from_dpsi(double dpsi, double gsprime, ParPhotosynth par_photosynth, ParCost par_cost){
   double gstar = par_photosynth.gammastar/par_photosynth.patm*1e6;
   double Km = par_photosynth.kmm/par_photosynth.patm*1e6;
   double ca = par_photosynth.ca/par_photosynth.patm*1e6;
   double br = par_photosynth.delta;
   double y = par_cost.gamma;
   
-  double gsprime = calc_gsprime(dpsi, psi_soil, par_plant, par_env);
- 
   double ca2 = ca*ca;
   double x = (-2*ca*dpsi*(gstar + br*Km)*y + 
      ca2*((3 - 2*br)*gstar + br*Km)*gsprime + 
@@ -112,10 +110,11 @@ inline DPsiBounds calc_dpsi_bound(double psi_soil, ParPlant par_plant, ParEnv pa
   double Pppox = Pprimeprime(psi_soil, par_plant.psi50, par_plant.b);
   
   auto f1 = [&](double dpsi){
-	double gs = calc_gs(dpsi, psi_soil, par_plant, par_env);
-	double x = calc_x_from_dpsi(dpsi,psi_soil,par_plant, par_env, par_photosynth, par_cost);
-	double J=calc_J(gs, x, par_photosynth)-4*par_photosynth.phi0*par_photosynth.Iabs;
-	return J;
+    double gs = calc_gs(dpsi, psi_soil, par_plant, par_env);
+    double gsprime = calc_gsprime(dpsi, psi_soil, par_plant, par_env);
+    double x = calc_x_from_dpsi(dpsi,gsprime, par_photosynth, par_cost);
+    double J=calc_J(gs, x, par_photosynth)-4*par_photosynth.phi0*par_photosynth.Iabs;
+    return J;
   };
   
   double a = (ca + 2*gstar)*K*Pppox*4/8;
@@ -131,6 +130,14 @@ inline DPsiBounds calc_dpsi_bound(double psi_soil, ParPlant par_plant, ParEnv pa
   //# cat(psi_soil, ":", exact, " ", approx_O2, " ", use_bound, "\n");
   double Iabs_bound = pn::zero(use_bound*0.001, use_bound*0.99, f1, 1e-6).root;
   
+  // If using PM, find max dpsi from max possible transpiration 
+  if (par_env.et_method == ET_PM){
+    double ga = calc_g_aero(par_plant.h_canopy, par_env.v_wind, par_plant.h_wind_measurement);
+    double Qmax = calc_max_transpiration_pm(ga, par_env);
+    double max_dpsi = calc_dpsi_from_sapflux(Qmax, psi_soil, par_plant, par_env);
+    Iabs_bound = fmin(max_dpsi, Iabs_bound);
+  }
+
   //# dpsi=seq(exact*0.001,exact*0.99, length.out=200);
   //# plot(y=sapply(X = dpsi, FUN = f1), x=dpsi, type="l");
   
@@ -151,7 +158,7 @@ inline DFDX dFdx(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_en
   double gs = calc_gs(dpsi, psi_soil, par_plant, par_env);
   double gsprime = calc_gsprime(dpsi, psi_soil, par_plant, par_env);
   
-  double X =  calc_x_from_dpsi(dpsi, psi_soil, par_plant, par_env, par_photosynth, par_cost);
+  double X =  calc_x_from_dpsi(dpsi, gsprime, par_photosynth, par_cost);
   
   double J = calc_J(gs, X, par_photosynth);
   

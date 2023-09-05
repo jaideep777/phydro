@@ -46,6 +46,20 @@ inline double calc_dP_ddpsi(double dpsi, double vcmax, double jmax, double psi_s
 //	return dP_ddpsi;
 }
 
+double calc_dpsi_bound_inst(double psi_soil, ParPlant par_plant, ParEnv par_env, ParPhotosynth par_photosynth, ParCost par_cost){
+  double bound = 100;
+  // If using PM, find max dpsi from max possible transpiration 
+  if (par_env.et_method == ET_PM){
+    double ga = calc_g_aero(par_plant.h_canopy, par_env.v_wind, par_plant.h_wind_measurement);
+    double Qmax = calc_max_transpiration_pm(ga, par_env);
+    double max_dpsi = calc_dpsi_from_sapflux(Qmax, psi_soil, par_plant, par_env);
+    bound = fmin(max_dpsi, bound);
+  }
+
+  return bound;
+}
+
+
 } // phydro
 
 #endif

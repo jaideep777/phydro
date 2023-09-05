@@ -16,7 +16,7 @@ int main(){
 	
 	ParCost        par_cost(0.118514, 1.227068);
 	ParPlant       par_plant(7.457324e-17, -1.039539, 1);
-	ParPhotosynth  par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark);
+	ParPhotosynth  par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tc, tc);
 	ParEnv         par_env(tc, pa, vpd, ppfd/2);
 
 	double jmax = 117.0184518;
@@ -36,6 +36,7 @@ int main(){
 	auto dpsi_opt = pn::zero(0, 20, [&](double dpsi){return calc_dP_ddpsi(dpsi, vcmax, jmax, psi_soil, par_plant, par_env, par_photosynth, par_cost);}, 1e-6);
 	cout << "Opt analytical = " << dpsi_opt.root << "\n";
 
-	return 0;
+	if (fabs(dpsi_opt_num - dpsi_opt.root) < 1e-5) return 0;
+	else return 1;
 }
 

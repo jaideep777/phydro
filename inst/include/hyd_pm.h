@@ -4,23 +4,10 @@
 #include <stdexcept>
 #include <cmath>
 
+#include "environment.h"
+
 namespace phydro{
 
-
-// Calculate saturation vapour pressure at given temperature and pressure [Pa]
-// This function was adopted from the R package 'plantecophys'
-// Duursma (2015) https://doi.org/10/bkmj.
-// patm    Atmospheric pressure [Pa]
-// TdegC   Temperature [degC]
-inline double calc_esat(double TdegC, double patm = 101325) {
-    // Pa in kPa
-    double a = 611.21;
-    double b = 17.502;
-    double c = 240.97;
-    double f = 1.0007 + 3.46e-8 * patm;
-    double esatval = f * a * (std::exp(b * TdegC / (c + TdegC)));
-    return esatval;
-}
 
 
 // Aerodynamic conductance [m s-1]
@@ -43,93 +30,6 @@ inline double calc_g_aero(double h_canopy, double v_wind, double z_measurement){
 }
 
 
-// calculate density of dry (or moist) air [kg m-3]
-// tc_air    Air temperature [degC]
-// patm      Atmospheric pressure [Pa]
-// vpd       Vapour pressure deficit [Pa]
-inline double calc_density_air(double tc_air, double patm, double vpd, bool moist = true){
-	double tk = tc_air+273.16;
-	double R = 287.052874; // Specific universal gas const for dry air [J kg-1 K-1]
-
-	// for dry air
-	if (!moist) return patm / R / tk;
-
-	// for moist air
-	double vp = calc_esat(tc_air, patm) - vpd;    // vapour pressure
-	double rv = 0.622 * vp/(patm - vp);   // https://glossary.ametsoc.org/wiki/Mixing_ratio
-	double tv = tk * (1 + rv/0.622)/(1 + rv);  // virtual temperature. https://glossary.ametsoc.org/wiki/Virtual_temperature
-	return patm / R / tv;
-}
-
-
-// calculate enthalpy of vapourization [J kg-1]
-// tc   temperature [degC]
-// Ref:
-//   Eq. 8, Henderson-Sellers (1984) https://rmets.onlinelibrary.wiley.com/doi/abs/10.1002/qj.49711046626
-inline double calc_enthalpy_vap(double tc){
-	double tk = tc + 273.15;
-	double a = tk/(tk - 33.91);
-	return 1.91846e6*a*a;
-}
-
-
-// calc specific heat capacity of *saturated* moist air [J kg-1 K-1]
-// Ref:
-//     Eq. 47, Tsilingiris (2008)
-// tc   Temperature [degC]
-inline double calc_cp_moist_air(double tc){
-	// Adjust temperature to avoid numerical blow-up
-	// Adopted temperature adjustment from SPLASH, Python version
-    double my_tc = std::min(std::max(tc, 0.0), 100.0);
-
-    // Calculate the specific heat capacity of water, J/kg/K
-    // 
-    // cp = 1.0045714270 +
-    //      2.050632750e-3 * my_tc -
-    //      1.631537093e-4 * my_tc * my_tc +
-    //      6.212300300e-6 * my_tc * my_tc * my_tc -
-    //      8.830478888e-8 * my_tc * my_tc * my_tc * my_tc +
-    //      5.071307038e-10 * my_tc * my_tc * my_tc * my_tc * my_tc;
-	double cp = (1.0045714270 +
-		 my_tc * ( 2.050632750e-3 +
-		 my_tc * (-1.631537093e-4 +
-		 my_tc * ( 6.212300300e-6 -
-		 my_tc * ( 8.830478888e-8 -
-		 my_tc *   5.071307038e-10))))) * 1e3;
-
-	return cp;
-} 
-
-// Calculate Psychrometric constant [Pa/K]
-inline double calc_psychro(double tc, double patm) {
-    // Constants
-    const double Ma = 0.02896;  // Molecular weight dry air, kg/mol
-    const double Mv = 0.018016; // Molecular weight of water vapor, kg/mol
-
-	// calculate specific heat capacity of moist air
-	double cp = calc_cp_moist_air(tc);
-
-    // Calculate latent heat of vaporization, J/kg
-    double lv = calc_enthalpy_vap(tc);
-
-    // Calculate psychrometric constant, Pa/K
-    // Eq. 8, Allen et al. (1998)
-	// double psychro = cp * kMa * patm / (kMv * lv);   // J kg-1 K-1 * Pa /  J kg-1 = Pa K-1
-	double psychro = cp * patm / ((Mv/Ma) * lv); // JJ: As per https://www.fao.org/3/x0490e/x0490e07.htm#psychrometric%20constant%20(g)
-
-    return psychro;
-}
-
-
-// Calculates the slope of the sat pressure ~ temp curve, Pa/K
-// Ref:      Eq. 13, Allen et al. (1998)
-// tc        air temperature, degrees C
-// output:   slope of the sat pressure temp curve, Pa/K
-inline double calc_sat_slope(double tc){
-	return 17.269*237.3*610.78 * exp(tc*17.269/(tc + 237.3)) / ((tc + 237.3)*(tc + 237.3));
-}
-
-
 // multiplier to convert:
 //   stomatal conductance to CO2 [mol m-2 s-1] ----> stomatal conductance to water [m s-1]
 inline double gs_conv(double tc, double patm){
@@ -145,18 +45,23 @@ inline double gs_conv(double tc, double patm){
 // gs   Stomatal conductance to CO2 [mol m-2 s-1]
 // ga   Aerodynamic conductance [m s-1]
 // Rn   Absorbed net radiation [W m-2]
-inline double calc_transpiration_pm(double Rn, double gs, double ga, double tc, double patm, double vpd){
-	double rho = calc_density_air(tc, patm, vpd, true);
-	double cp = calc_cp_moist_air(tc);
-	double gamma = calc_psychro(tc, patm);
-	double epsilon = calc_sat_slope(tc) / gamma;
+inline double calc_transpiration_pm(double gs, double ga, ParEnv par_env){
 
-	double lv = calc_enthalpy_vap(tc);
+	double gw = gs * gs_conv(par_env.tc, par_env.patm);  // gw in [m s-1]
 
-	double gw = gs * gs_conv(tc, patm);  // gw in [m s-1]
+	double latent_energy = (par_env.epsilon*par_env.Rn + (par_env.rho*par_env.cp/par_env.gamma)*ga*par_env.vpd) / (par_env.epsilon + 1 + ga/gw); // latent energy W m-2 
+	double trans = latent_energy * (55.5 / par_env.lv); // W m-2 ---> mol m-2 s-1
+	return trans;
+}
 
-	double latent_energy = (epsilon*Rn + (rho*cp/gamma)*ga*vpd) / (epsilon + 1 + ga/gw); // latent energy W m-2 
-	double trans = latent_energy * (55.5 / lv); // W m-2 ---> mol m-2 s-1
+
+// Calculate maximum possible PML transpiration for a given ga, calculated by setting gs = inf, [mol m-2 s-1]
+// ga   Aerodynamic conductance [m s-1]
+// Rn   Absorbed net radiation [W m-2]
+inline double calc_max_transpiration_pm(double ga, ParEnv par_env){
+
+	double latent_energy = (par_env.epsilon*par_env.Rn + (par_env.rho*par_env.cp/par_env.gamma)*ga*par_env.vpd) / (par_env.epsilon + 1); // latent energy W m-2 
+	double trans = latent_energy * (55.5 / par_env.lv); // W m-2 ---> mol m-2 s-1
 	return trans;
 }
 
@@ -165,49 +70,39 @@ inline double calc_transpiration_pm(double Rn, double gs, double ga, double tc, 
 // Q    Sap flux [mol m-2 s-1]
 // ga   Aerodynamic conductance [m s-1]
 // Rn   Absorbed net radiation [W m-2]
-inline double calc_gs_pm(double Rn, double Q, double ga, double tc, double patm, double vpd){
-	double rho = calc_density_air(tc, patm, vpd, true);
-	double cp = calc_cp_moist_air(tc);
-	double gamma = calc_psychro(tc, patm);
-	double epsilon = calc_sat_slope(tc) / gamma;
+inline double calc_gs_pm(double Q, double ga, ParEnv par_env){
 
-	double lv = calc_enthalpy_vap(tc);
+	double Q_energy = Q * (par_env.lv / 55.5);
 
-	double Q_energy = Q * (lv / 55.5);
+	double den = par_env.epsilon*par_env.Rn + (par_env.rho*par_env.cp/par_env.gamma)*ga*par_env.vpd - (1+par_env.epsilon)*Q_energy; 
+	//den = fmax(den, 0);
 
-	double den = epsilon*Rn + (rho*cp/gamma)*ga*vpd - (1+epsilon)*Q_energy; 
 	double gw = ga * Q_energy / den; // stomatal conductance to water [m s-1]
 
-	double gs = gw / gs_conv(tc, patm); // stomatal conductance to CO2 [mol m-2 s-1]
+	double gs = gw / gs_conv(par_env.tc, par_env.patm); // stomatal conductance to CO2 [mol m-2 s-1]
 
 	return gs;
 }
 
 
 // Calculate derivative of transpiration wrt stomatal conductance to CO2 [unitless] - analytical version
-inline double calc_dE_dgs_pm(double Rn, double gs, double ga, double tc, double patm, double vpd){
-	double rho = calc_density_air(tc, patm, vpd, true);
-	double cp = calc_cp_moist_air(tc);
-	double gamma = calc_psychro(tc, patm);
-	double epsilon = calc_sat_slope(tc) / gamma;
+inline double calc_dE_dgs_pm(double gs, double ga, ParEnv par_env){
 
-	double lv = calc_enthalpy_vap(tc);
+	double gw = gs * gs_conv(par_env.tc, par_env.patm);  // [m s-1]
 
-	double gw = gs * gs_conv(tc, patm);  // [m s-1]
-
-	double num = ga * (epsilon*Rn + (rho*cp/gamma)*ga*vpd);
-	double den = epsilon*gw + gw + ga;
+	double num = ga * (par_env.epsilon*par_env.Rn + (par_env.rho*par_env.cp/par_env.gamma)*ga*par_env.vpd);
+	double den = par_env.epsilon*gw + gw + ga;
 
 	double d_le_dgw = (num/den/den); // derivative of latent energy wrt stomatal conductance for water in m s-1
 
-	return d_le_dgw * (55.5 / lv) * gs_conv(tc, patm);
+	return d_le_dgw * (55.5 / par_env.lv) * gs_conv(par_env.tc, par_env.patm);
 }
 
 
 // Calculate derivative of transpiration wrt stomatal conductance to CO2 [unitless] - numerical version
-inline double calc_dE_dgs_pm_num(double Rn, double gs, double ga, double tc, double patm, double vpd){
-	double E = calc_transpiration_pm(Rn, gs, ga, tc, patm, vpd);
-	double E_plus = calc_transpiration_pm(Rn, gs+1e-6, ga, tc, patm, vpd);
+inline double calc_dE_dgs_pm_num(double gs, double ga, ParEnv par_env){
+	double E = calc_transpiration_pm(gs, ga, par_env);
+	double E_plus = calc_transpiration_pm(gs+1e-6, ga, par_env);
 
 	return (E_plus-E)/1e-6;
 }
