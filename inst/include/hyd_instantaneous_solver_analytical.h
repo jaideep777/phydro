@@ -13,12 +13,14 @@ inline double calc_dP_ddpsi(double dpsi, double vcmax, double jmax, double psi_s
 	double br = par_photosynth.delta;
 	double y = par_cost.gamma;
 
-	double gs = calc_gs(dpsi, psi_soil, par_plant, par_env);
+	double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
+	double gs = calc_gs_from_Q(Q, psi_soil, par_plant, par_env);
 	auto Assim = calc_assimilation_limiting(vcmax, jmax, gs, par_photosynth);
 	double P = Assim.a - y*dpsi*dpsi;
 
 	double dpsi1 = dpsi+1e-6;
-	double gs1 = calc_gs(dpsi1, psi_soil, par_plant, par_env);
+	double Q1 = calc_sapflux(dpsi1, psi_soil, par_plant, par_env);
+	double gs1 = calc_gs_from_Q(Q1, psi_soil, par_plant, par_env);
 	auto Assim1 = calc_assimilation_limiting(vcmax, jmax, gs1, par_photosynth);
 	double P1 = Assim1.a - y*(dpsi1)*(dpsi1);
 

@@ -42,7 +42,8 @@ class PHydro_Profit{
 		double jmax = exp(x[0]);
 		double dpsi = x[1];
 
-		double gs = calc_gs(dpsi, psi_soil, par_plant, par_env);  // gs in mol/m2/s/Mpa
+		double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
+		double gs = calc_gs_from_Q(Q, psi_soil, par_plant, par_env);
 		auto   aj = calc_assim_light_limited(gs, jmax, par_photosynth);  // Aj in umol/m2/s
 		
 		double costs =  par_cost.alpha * jmax + 

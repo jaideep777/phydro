@@ -20,7 +20,8 @@ int main(){
 	int N = 10;
 	for (int i=0; i<N; ++i){
 		double psi_s = -6.0 + i*(6.0)/(N-1);
-		g = phydro::calc_gs(1, psi_s, P, E);
+		double Q = phydro::calc_sapflux(1, psi_s, P, E);
+		g = phydro::calc_gs_from_Q(Q, psi_s, P, E);
 		cout << psi_s << "\t" << g << "\n";
 	}
 	auto t2 = std::chrono::high_resolution_clock::now();

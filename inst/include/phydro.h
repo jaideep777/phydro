@@ -57,14 +57,14 @@ inline PHydroResult phydro_analytical(double tc, double tg, double ppfd, double 
 
 	auto     bounds = calc_dpsi_bound(psi_soil, par_plant, par_env, par_photosynth, par_cost);
 	auto   dpsi_opt = pn::zero(bounds.Iabs_bound*0.001, bounds.Iabs_bound*0.999, [&](double dpsi){return dFdx(dpsi, psi_soil, par_plant, par_env, par_photosynth, par_cost).dPdx;}, 1e-6);
-    double  gsprime = calc_gsprime(dpsi_opt.root, psi_soil, par_plant, par_env);
+	double        e = calc_sapflux(dpsi_opt.root, psi_soil, par_plant, par_env);
+	double       gs = calc_gs_from_Q(e, psi_soil, par_plant, par_env);
+    double  gsprime = calc_gsprime(dpsi_opt.root, gs, psi_soil, par_plant, par_env);
     double        x = calc_x_from_dpsi(dpsi_opt.root,gsprime,par_photosynth, par_cost);
-	double       gs = calc_gs(dpsi_opt.root, psi_soil, par_plant, par_env);
 	double        J = calc_J(gs, x, par_photosynth);	
 	double     jmax = calc_jmax_from_J(J, par_photosynth); 
 	double    vcmax = (J/4.0)*(x*par_photosynth.ca + par_photosynth.kmm)/(x*par_photosynth.ca + 2*par_photosynth.gammastar);
 	double        a = gs*(par_photosynth.ca/par_photosynth.patm*1e6)*(1-x);
-	double        e = calc_sapflux(dpsi_opt.root, psi_soil, par_plant, par_env);
 
 	PHydroResult res;
 	res.a = a;
@@ -110,9 +110,9 @@ inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax2
 
 	double  bound = calc_dpsi_bound_inst(psi_soil, par_plant, par_env, par_photosynth, par_cost);
 	auto dpsi_opt = pn::zero(0, 0.99*bound, [&](double dpsi){return calc_dP_ddpsi(dpsi, vcmax, jmax, psi_soil, par_plant, par_env, par_photosynth, par_cost);}, 1e-6);
-	double     gs = calc_gs(dpsi_opt.root, psi_soil, par_plant, par_env);
-	auto        A = calc_assimilation_limiting(vcmax, jmax, gs, par_photosynth); 	
 	double      e = calc_sapflux(dpsi_opt.root, psi_soil, par_plant, par_env);
+	double     gs = calc_gs_from_Q(e, psi_soil, par_plant, par_env);
+	auto        A = calc_assimilation_limiting(vcmax, jmax, gs, par_photosynth); 	
 
 	PHydroResult res;
 	res.a = A.a;
@@ -163,10 +163,10 @@ inline PHydroResult phydro_numerical(double tc, double tg, double ppfd, double n
 	par_env.et_method = par_control.et_method;
 
 	auto     opt = optimize_midterm_multi(psi_soil, par_cost, par_photosynth, par_plant, par_env);
-	double    gs = calc_gs(opt.dpsi, psi_soil, par_plant, par_env);
+	double     e = calc_sapflux(opt.dpsi, psi_soil, par_plant, par_env);
+	double    gs = calc_gs_from_Q(e, psi_soil, par_plant, par_env);
 	auto      aj = calc_assim_light_limited(gs, opt.jmax, par_photosynth); 	
 	double vcmax = vcmax_coordinated_numerical(aj.a, aj.ci, par_photosynth);
-	double     e = calc_sapflux(opt.dpsi, psi_soil, par_plant, par_env);
 
 	PHydroResult res;
 	res.a = aj.a;
@@ -211,9 +211,9 @@ inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25
 	double jmax  =  jmax25 * par_photosynth.fT_jmax;
 
 	double  dpsi = optimize_shortterm_multi(vcmax, jmax, psi_soil, par_cost, par_photosynth, par_plant, par_env);
-	double    gs = calc_gs(dpsi, psi_soil, par_plant, par_env);
-	auto       A = calc_assimilation_limiting(vcmax, jmax, gs, par_photosynth); 	
 	double     e = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
+	double    gs = calc_gs_from_Q(e, psi_soil, par_plant, par_env);
+	auto       A = calc_assimilation_limiting(vcmax, jmax, gs, par_photosynth); 	
 
 	PHydroResult res;
 	res.a = A.a;
