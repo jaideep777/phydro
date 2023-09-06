@@ -78,18 +78,18 @@ inline double calc_x_from_dpsi(double dpsi, double gsprime, ParPhotosynth par_ph
 }
 
 
-inline double calc_delta_from_dpsi(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env, ParPhotosynth par_photosynth, ParCost par_cost){
-  double gstar = par_photosynth.gammastar/par_photosynth.patm*1e6;
-  double Km = par_photosynth.kmm/par_photosynth.patm*1e6;
-  double ca = par_photosynth.ca/par_photosynth.patm*1e6;
-  double br = par_photosynth.delta;
-  double y = par_cost.gamma;
+// inline double calc_delta_from_dpsi(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env, ParPhotosynth par_photosynth, ParCost par_cost){
+//   double gstar = par_photosynth.gammastar/par_photosynth.patm*1e6;
+//   double Km = par_photosynth.kmm/par_photosynth.patm*1e6;
+//   double ca = par_photosynth.ca/par_photosynth.patm*1e6;
+//   double br = par_photosynth.delta;
+//   double y = par_cost.gamma;
    
-  double gsprime = calc_gsprime(dpsi, psi_soil, par_plant, par_env);
+//   double gsprime = calc_gsprime(dpsi, psi_soil, par_plant, par_env);
   
-  double delt = (-2*dpsi*y + (ca + 2*gstar)*gsprime);
-  return delt;
-}
+//   double delt = (-2*dpsi*y + (ca + 2*gstar)*gsprime);
+//   return delt;
+// }
 
 
 struct DPsiBounds{
@@ -110,8 +110,9 @@ inline DPsiBounds calc_dpsi_bound(double psi_soil, ParPlant par_plant, ParEnv pa
   double Pppox = Pprimeprime(psi_soil, par_plant.psi50, par_plant.b);
   
   auto f1 = [&](double dpsi){
-    double gs = calc_gs(dpsi, psi_soil, par_plant, par_env);
-    double gsprime = calc_gsprime(dpsi, psi_soil, par_plant, par_env);
+    double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
+    double gs = calc_gs_from_Q(Q, psi_soil, par_plant, par_env);
+    double gsprime = calc_gsprime(dpsi, gs, psi_soil, par_plant, par_env);
     double x = calc_x_from_dpsi(dpsi,gsprime, par_photosynth, par_cost);
     double J=calc_J(gs, x, par_photosynth)-4*par_photosynth.phi0*par_photosynth.Iabs;
     return J;
@@ -122,8 +123,13 @@ inline DPsiBounds calc_dpsi_bound(double psi_soil, ParPlant par_plant, ParEnv pa
   double c = (ca + 2*gstar)*K*Pox;
   double del = b*b-4*a*c;
 
+  auto f2 = [&](double dpsi){
+    double gsprime = calc_gsprime_from_dpsi(dpsi, psi_soil, par_plant, par_env);
+    return (-2*dpsi*y + (ca + 2*gstar)*gsprime);
+  };
+
   double approx_O2 = (-b-sqrt(del))/(2*a);
-  double exact = pn::zero(0,10, [&](double dpsi){return (-2*dpsi*y + (ca + 2*gstar)*calc_gsprime(dpsi, psi_soil, par_plant, par_env));}, 1e-6).root;
+  double exact = pn::zero(0,10, f2, 1e-6).root;
 
   double use_bound = exact;
 	
@@ -155,8 +161,10 @@ struct DFDX{
 
 
 inline DFDX dFdx(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env, ParPhotosynth par_photosynth, ParCost par_cost){
-  double gs = calc_gs(dpsi, psi_soil, par_plant, par_env);
-  double gsprime = calc_gsprime(dpsi, psi_soil, par_plant, par_env);
+  
+  double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
+  double gs = calc_gs_from_Q(Q, psi_soil, par_plant, par_env);
+  double gsprime = calc_gsprime(dpsi, gs, psi_soil, par_plant, par_env);
   
   double X =  calc_x_from_dpsi(dpsi, gsprime, par_photosynth, par_cost);
   

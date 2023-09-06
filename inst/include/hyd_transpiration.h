@@ -130,10 +130,17 @@ inline double calc_dpsi_from_sapflux(double Q, double psi_soil, ParPlant par_pla
 }
 
 
-// Calculates regulated stomatal conducatnce given the leaf water potential, 
+// // Calculates regulated stomatal conducatnce given the leaf water potential, 
+// // plant hydraulic traits, and the environment.
+// inline double calc_gs_from_dpsi(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+// 	double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
+// 	return calc_gs_from_Q(Q, psi_soil, par_plant, par_env);
+// }
+
+// Calculates regulated stomatal conducatnce given transpiration/sapflux
+// water balance is assumed
 // plant hydraulic traits, and the environment.
-inline double calc_gs(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
-	double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
+inline double calc_gs_from_Q(double Q, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double D = (par_env.vpd/par_env.patm);
 
 	double gs;
@@ -180,26 +187,52 @@ inline double calc_Qprime(double dpsi, double psi_soil, ParPlant par_plant, ParE
 }
 
 
-// derivate of E wrt gs
-inline double calc_dE_dgs(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+inline double calc_dE_dgs_dif(ParEnv par_env){
 	double D = (par_env.vpd/par_env.patm);
-	if (par_env.et_method == ET_DIFFUSION){
-		return 1.6*D;
-	}
-	else if (par_env.et_method == ET_PM){
-		double ga = calc_g_aero(par_plant.h_canopy, par_env.v_wind, par_plant.h_wind_measurement);
-		double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
-		double gs = calc_gs_pm(Q, ga, par_env);
-		return calc_dE_dgs_pm(gs, ga, par_env);
-	}
+	return 1.6*D;
+}
+
+inline double calc_dE_dgs_pm_from_gs(double gs, ParPlant par_plant, ParEnv par_env){
+	double ga = calc_g_aero(par_plant.h_canopy, par_env.v_wind, par_plant.h_wind_measurement);
+	return calc_dE_dgs_pm(gs, ga, par_env);
+}
+
+inline double calc_dE_dgs_pm_from_dpsi(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+	double ga = calc_g_aero(par_plant.h_canopy, par_env.v_wind, par_plant.h_wind_measurement);
+	double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
+	double gs = calc_gs_pm(Q, ga, par_env);
+	return calc_dE_dgs_pm(gs, ga, par_env);
+}
+
+// derivate of E wrt gs
+inline double calc_dE_dgs_from_gs(double gs, ParPlant par_plant, ParEnv par_env){
+	if      (par_env.et_method == ET_DIFFUSION) return calc_dE_dgs_dif(par_env);
+	else if (par_env.et_method == ET_PM)        return calc_dE_dgs_pm_from_gs(gs, par_plant, par_env);
+	else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
+}
+
+// derivate of E wrt gs
+inline double calc_dE_dgs_from_dpsi(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+	if      (par_env.et_method == ET_DIFFUSION) return calc_dE_dgs_dif(par_env);
+	else if (par_env.et_method == ET_PM)        return calc_dE_dgs_pm_from_dpsi(dpsi, psi_soil, par_plant, par_env);
 	else throw std::invalid_argument("Unknown et_method:" + par_env.et_method);
 }
 
 
 // Derivative of gs wrt dpsi, dgs/ddpsi
-inline double calc_gsprime(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+// This version of the function avoids recomputation of gs when it is already known
+inline double calc_gsprime(double dpsi, double gs, double psi_soil, ParPlant par_plant, ParEnv par_env){
 	double Qprime = calc_Qprime(dpsi, psi_soil, par_plant, par_env);
-	double Eprime = calc_dE_dgs(dpsi, psi_soil, par_plant, par_env);
+	double Eprime = calc_dE_dgs_from_gs(gs, par_plant, par_env);
+
+	return Qprime / Eprime;
+}
+
+// Derivative of gs wrt dpsi, dgs/ddpsi
+// This version is for use when gs is not known, and needs to be computed anyway
+inline double calc_gsprime_from_dpsi(double dpsi, double psi_soil, ParPlant par_plant, ParEnv par_env){
+	double Qprime = calc_Qprime(dpsi, psi_soil, par_plant, par_env);
+	double Eprime = calc_dE_dgs_from_dpsi(dpsi, psi_soil, par_plant, par_env);
 
 	return Qprime / Eprime;
 }
