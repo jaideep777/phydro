@@ -1,6 +1,7 @@
 #ifndef PHYDRO_PHOTOSYNTHESIS_H
 #define PHYDRO_PHOTOSYNTHESIS_H
 
+#include <iostream>
 #include <cmath>
 #include <stdexcept>
 
@@ -53,6 +54,22 @@ class ParPhotosynth{
 
 	}
 
+	void print(){
+		std::cout << "Par Photosynth:\n";
+		std::cout << "   fT_vcmax = " << fT_vcmax << '\n';
+		std::cout << "   fT_jmax = " << fT_jmax << '\n';
+		std::cout << "   fT_rd = " << fT_rd << '\n';
+		std::cout << "   kmm = " << kmm << '\n';
+		std::cout << "   gammastar = " << gammastar << '\n';
+		std::cout << "   phi0 = " << phi0 << '\n';
+		std::cout << "   Iabs = " << Iabs << '\n';
+		std::cout << "   ca = " << ca << '\n';
+		std::cout << "   patm = " << patm << '\n';
+		std::cout << "   delta = " << delta << '\n';
+		std::cout << "   ftemp_vj_method = " << ftemp_vj_method << '\n';
+		std::cout << "   ftemp_rd_method = " << ftemp_rd_method << '\n';
+		std::cout << "   ftemp_br_method = " << ftemp_br_method << '\n';
+	}
 };
 
 

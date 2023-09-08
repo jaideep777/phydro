@@ -24,6 +24,10 @@ inline double calc_dP_ddpsi(double dpsi, double vcmax, double jmax, double psi_s
 	auto Assim1 = calc_assimilation_limiting(vcmax, jmax, gs1, par_photosynth);
 	double P1 = Assim1.a - y*(dpsi1)*(dpsi1);
 
+	// std:: cout << "dpsi = " << dpsi << '\n'; 
+    // std::cout << "P   " << dpsi << ' ' << Q  << ' ' <<  gs  << ' ' << Assim.a << '\n';
+    // std::cout << "P1  " << dpsi << ' ' << Q1 << ' ' <<  gs1 << ' ' << Assim1.a << '\n';
+
 	return (P1-P)/1e-6;
 
 //	double A,B;

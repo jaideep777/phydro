@@ -105,6 +105,8 @@ inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax2
 	par_env.gs_method = par_control.gs_method;
 	par_env.et_method = par_control.et_method;
 
+	// par_photosynth.print();
+
 	double vcmax = vcmax25 * par_photosynth.fT_vcmax;
 	double jmax  =  jmax25 * par_photosynth.fT_jmax;
 
