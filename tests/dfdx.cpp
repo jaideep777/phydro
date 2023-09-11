@@ -15,10 +15,21 @@ int main(){
 	double g;
 
 	phydro::ParPlant P(3e-17, -2, 2);
-	P.gs_method = phydro::GS_IGF;
 
-	phydro::ParEnv E(tc, p, vpd);
-	phydro::ParPhotosynth ph(tc, p, kphio, co2, ppfd, fapar, rdark);
+	phydro::ParEnv E(tc, p, vpd, 1000/2);
+	E.gs_method = phydro::GS_IGF;
+	
+	phydro::ParPhotosynth ph(tc, p, kphio, co2, ppfd, fapar, rdark, tc, 25.0);
+
+	phydro::ParPhotosynth ph_test(28, p, kphio, co2, ppfd, fapar, rdark, 19, 25.0);
+	ph_test.print();
+
+	double q1 = phydro::calc_sapflux(1, -1, P, E);
+	double g1 = phydro::calc_gs_from_Q(q1, -1, P, E);
+    double g1p = phydro::calc_gsprime(1, g1, -1, P, E);
+    double x = calc_x_from_dpsi(1, g1p, ph, phydro::ParCost(0.1, 1));
+    double J = calc_J(g1, x, ph)-4*ph.phi0*ph.Iabs;
+	cout << "dFdx f2: " << q1 << " " << g1 << " " << g1p << " " << x << " " << J << "\n";
 
 	auto t1 = std::chrono::high_resolution_clock::now();
 	int N = 10;
@@ -26,7 +37,7 @@ int main(){
 		double psi_s = -6.0 + i*(6.0)/(N-1);
 		phydro::DPsiBounds b1 = phydro::calc_dpsi_bound(psi_s, P, E, ph, phydro::ParCost(0.1, 1));
 		phydro::DFDX b = phydro::dFdx(b1.Iabs_bound*0.5, psi_s, P, E, ph, phydro::ParCost(0.1, 1));
-		cout << fixed << setprecision(6) << psi_s << "\t" << b.dJ_dchi << "\t" << b.djmax_dJ << "\t" << b.dPdx << "\t" << b.J << "\n";
+		cout << fixed << setprecision(6) << psi_s << "\t" << b1.exact << "\t" << b1.Iabs_bound << "\t" << b.dJ_dchi << "\t" << b.djmax_dJ << "\t" << b.dPdx << "\t" << b.J << "\n";
 	}
 	auto t2 = std::chrono::high_resolution_clock::now();
 

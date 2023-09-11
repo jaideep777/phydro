@@ -9,6 +9,7 @@ inst/website
 *.xlsx
 *.csv
 gprof2dot.py
+perf.data*
 
 *~
 
@@ -38,3 +39,5 @@ exec_*
 
 tags
 1
+
+*.html

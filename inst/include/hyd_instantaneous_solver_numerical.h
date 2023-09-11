@@ -46,7 +46,8 @@ class PHydro_Profit_Inst{
 	double value(const VectorXd &x) {
 		double dpsi = x[0];
 		
-		double gs = calc_gs(dpsi, psi_soil, par_plant, par_env);  // gs in mol/m2/s/Mpa
+		double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
+		double gs = calc_gs_from_Q(Q, psi_soil, par_plant, par_env);
 		auto   A = calc_assimilation_limiting(vcmax, jmax, gs, par_photosynth);  // min(Ac, Aj) in umol/m2/s
 		
 		double costs =  par_cost.gamma * dpsi*dpsi;

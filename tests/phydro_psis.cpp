@@ -47,7 +47,8 @@ int main(){
 	phydro::ParCost par_cost(0.1, 1);
 	phydro::ParPlant par_plant(3e-17, -2, 2);
 
-	//par_plant.gs_method = phydro::GS_APX2;
+	phydro::ParControl options;
+	options.gs_method = phydro::GS_IGF;
 
 	cout << setw(10) << "psi_s  " << "\t";
 	cout << setw(10) << "jmax   " << "\t";
@@ -65,7 +66,10 @@ int main(){
 	for (auto psi_soil : seq(-6, 0, 20)){
 
 		auto t1 = std::chrono::high_resolution_clock::now();
-		auto res = phydro::phydro_analytical(tc, ppfd, vpd, co2, elv, fapar, kphio, psi_soil, rdark, par_plant, par_cost);
+		phydro::PHydroResult res;
+		for (int i=0; i<1000; ++i){
+			res = phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, options);
+		}
 		auto t2 = std::chrono::high_resolution_clock::now();
 		time += (std::chrono::duration<double, std::milli> (t2 - t1)).count();
 		

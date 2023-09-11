@@ -55,11 +55,13 @@ int main(){
 
 		par_control.gs_method = phydro::GS_IGF;
 		
+		par_control.et_method = phydro::ET_DIFFUSION;
 		auto t1 = std::chrono::high_resolution_clock::now();
-		phydro::phydro_numerical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
+		phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t2 = std::chrono::high_resolution_clock::now();
 		time_num += (std::chrono::duration<double, std::micro> (t2 - t1)).count();
 			
+		par_control.et_method = phydro::ET_PM;
 		auto t3 = std::chrono::high_resolution_clock::now();
 		phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t4 = std::chrono::high_resolution_clock::now();
@@ -68,11 +70,13 @@ int main(){
 		
 		par_control.gs_method = phydro::GS_QNG;
 		
+		par_control.et_method = phydro::ET_DIFFUSION;
 		auto t9 = std::chrono::high_resolution_clock::now();
-		phydro::phydro_numerical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
+		phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t10 = std::chrono::high_resolution_clock::now();
 		time_num_qng += (std::chrono::duration<double, std::micro> (t10 - t9)).count();
 			
+		par_control.et_method = phydro::ET_PM;
 		auto t11 = std::chrono::high_resolution_clock::now();
 		phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t12 = std::chrono::high_resolution_clock::now();
@@ -81,11 +85,13 @@ int main(){
 		
 		par_control.gs_method = phydro::GS_APX;
 
+		par_control.et_method = phydro::ET_DIFFUSION;
 		auto t5 = std::chrono::high_resolution_clock::now();
-		phydro::phydro_numerical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
+		phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t6 = std::chrono::high_resolution_clock::now();
 		time_num_apx += (std::chrono::duration<double, std::micro> (t6 - t5)).count();
 			
+		par_control.et_method = phydro::ET_PM;
 		auto t7 = std::chrono::high_resolution_clock::now();
 		phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t8 = std::chrono::high_resolution_clock::now();
@@ -93,11 +99,13 @@ int main(){
 
 		par_control.gs_method = phydro::GS_APX2;
 		
+		par_control.et_method = phydro::ET_DIFFUSION;
 		auto t13 = std::chrono::high_resolution_clock::now();
-		phydro::phydro_numerical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
+		phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t14 = std::chrono::high_resolution_clock::now();
 		time_num_apx2 += (std::chrono::duration<double, std::micro> (t14- t13)).count();
 			
+		par_control.et_method = phydro::ET_PM;
 		auto t15 = std::chrono::high_resolution_clock::now();
 		phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, par_control);
 		auto t16 = std::chrono::high_resolution_clock::now();
@@ -105,7 +113,7 @@ int main(){
 
 	}
 	
-	cout << "                | " << "Analytical  \t Numerical"   << "\n";
+	cout << "                | " << "PML       \t Diffusion"   << "\n";
 	cout << "----------------+---------------------------------------\n";
 	cout << "Avg time (IGF)  | " << time_ana/1000     << " us\t" << time_num/1000      << " us\n";
 	cout << "Avg time (QNG)  | " << time_ana_qng/1000 << " us\t" << time_num_qng/1000  << " us\n";

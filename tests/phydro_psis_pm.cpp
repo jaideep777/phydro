@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <fstream>
 #include "phydro.h"
+#include <chrono>
 using namespace std;
 
 
@@ -37,17 +38,20 @@ int main(){
 	// Define environmental conditions
 	double tc = 25;             // temperature, deg C
 	double ppfd = 300;          // umol/m2/s
-	//double vpd  = 1000;         // Pa
+	double vpd  = 1000;         // Pa
 	double co2  = 400;          // ppm
 	double elv  = 0;            // m.a.s.l.
 	double fapar = 0.7;         // fractioni
-	double rdark = 0.00;
-	double psi_soil = 0;
-
+	double rdark = 0.02;
+	
 	phydro::ParCost par_cost(0.1, 1);
 	phydro::ParPlant par_plant(3e-17, -2, 2);
 
-	cout << setw(10) << "vpd    " << "\t";
+	phydro::ParControl options;
+	options.et_method = phydro::ET_PM;
+	options.gs_method = phydro::GS_IGF;
+
+	cout << setw(10) << "psi_s  " << "\t";
 	cout << setw(10) << "jmax   " << "\t";
 	cout << setw(10) << "dpsi   " << "\t";
 	cout << setw(10) << "gs     " << "\t";
@@ -56,14 +60,21 @@ int main(){
 	cout << setw(10) << "chi    " << "\t";
 	cout << setw(10) << "vcmax  " << "\n";
 
-	ifstream fin("tests/test_data/vpd.tsv");
+	ifstream fin("tests/test_data/psi_pm.tsv");
 	double nerr = 0; int count = 0;
 
-	for (auto vpd : lseq(5, 5000, 50)){
+	double time = 0;
+	for (auto psi_soil : seq(-6, 0, 20)){
 
-		auto res = phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost);
+		auto t1 = std::chrono::high_resolution_clock::now();
+		phydro::PHydroResult res;
+		for (int i=0; i<1000; ++i){
+			res = phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, options);
+		}
+		auto t2 = std::chrono::high_resolution_clock::now();
+		time += (std::chrono::duration<double, std::milli> (t2 - t1)).count();
 		
-		cout << setw(10) <<  vpd       << "\t"; cout.flush();
+		cout << setw(10) <<  psi_soil  << "\t"; cout.flush();
 		cout << setw(10) <<  res.jmax  << "\t";
 		cout << setw(10) <<  res.dpsi  << "\t";
 		cout << setw(10) <<  res.gs    << "\t";
@@ -84,6 +95,7 @@ int main(){
 	}
 	
 	cout << "Average error = " << nerr/count << "\n";
+	cout << "Avg time = " << time/20.0 << " ms\n";
 	
 	if (abs (nerr/count) < 5e-5) return 0;
 	else return 1;
