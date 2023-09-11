@@ -175,16 +175,18 @@ inline Rcpp::List rphydro_instantaneous_numerical(double vcmax25, double jmax25,
 
 } // phydro namespace
 
+using phydro::ParEnv;
+using phydro::ParPlant;
 
-RCPP_EXPOSED_CLASS(phydro::ParEnv);
-RCPP_EXPOSED_CLASS(phydro::ParPlant);
-
-using namespace phydro;
+RCPP_EXPOSED_CLASS(ParEnv);
+RCPP_EXPOSED_CLASS(ParPlant);
 
 // -------------------------------------------------------------
 //   R Interface
 // -------------------------------------------------------------
 RCPP_MODULE(phydro_module) {
+	using namespace phydro;
+
 	class_ <ParEnv>("ParEnv")
 		.constructor<double,double,double,double,double>()
 		.constructor<double,double,double,double>()
