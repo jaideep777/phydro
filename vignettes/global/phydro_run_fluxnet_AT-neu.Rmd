@@ -150,7 +150,7 @@ par_plant_leaf_pm = list(conductivity=0.37e-16, psi50=-1.2, b=1, tchome = quanti
 par_plant_leaf_diff = list(conductivity=0.6e-16, psi50=-1.2, b=1, tchome = quantile(phydro_input_subdaily$tc, c(.75)))
 
 options = list(gs_method = "GS_IGF",
-               et_method = "ET_PM",
+               et_method = "ET_DIFFUSION",
                ftemp_vj_method = "FV_kumarathunge19",
                ftemp_rd_method = "FR_heskel16",
                ftemp_br_method = "FB_atkin15",

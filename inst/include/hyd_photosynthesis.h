@@ -82,11 +82,13 @@ struct ACi{
 
 
 inline double QUADM(double A, double B, double C){
-	return (-B - sqrt(B*B - 4*A*C)) / (2*A);
+	if (A==0) return -C/B;
+	else return (-B - sqrt(B*B - 4*A*C)) / (2*A);
 }
 
 inline double QUADP(double A, double B, double C){
-	return (-B + sqrt(B*B - 4*A*C)) / (2*A);
+	if (A==0) return -C/B;
+	else return (-B + sqrt(B*B - 4*A*C)) / (2*A);
 }
 
 
@@ -114,7 +116,7 @@ inline ACi calc_assim_light_limited(double _gs, double jmax, ParPhotosynth par_p
 	double ca = par_photosynth.ca;             // ca is in Pa
 	double gs = _gs * 1e6/par_photosynth.patm;  // convert to umol/m2/s/Pa
 
-	gs += 1e-12; // FIXME: delete?
+	//gs += 1e-12; // FIXME: delete?
 
 	double d = par_photosynth.delta;
 

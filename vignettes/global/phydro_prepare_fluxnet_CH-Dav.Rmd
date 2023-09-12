@@ -18,14 +18,14 @@ library(rphydro)
 library(tidyverse)
 library(ggplot2)
 library(reshape2)
-# library(FluxDataKit)
+library(FluxDataKit)
 ```
 
 FluxDataKit installation throws an error. Just run the R files manually for now.
 
 ```{r, echo = F, results='hide', message=FALSE, warning=F}
-list = list.files("~/codes/FluxDataKit/R/")
-a = map(paste0("~/codes/FluxDataKit/R/", list), source, verbose=F)
+# list = list.files("~/codes/FluxDataKit/R/")
+# a = map(paste0("~/codes/FluxDataKit/R/", list), source, verbose=F)
 ```
 
 ## Read and convert data in the desired format
