@@ -71,7 +71,7 @@ acc2 = rphydro_analytical(tc,
                           par_cost, 
                           options)
 
-dat2 = list(vpd = exp(seq(log(100), log(5000), length.out = 50 )),
+dat2 = list(vpd = exp(seq(log(100), log(5000), length.out = 100 )),
             psi_soil = c(-0.1, -3)) %>%
   expand.grid() %>% 
   mutate(dat = purrr::map2(.x = psi_soil, 
@@ -123,7 +123,7 @@ acc1 = rphydro_analytical(tc,
                           options
                           )
 
-dat1 = list(vpd = exp(seq(log(100), log(5000), length.out = 50)),
+dat1 = list(vpd = exp(seq(log(100), log(5000), length.out = 100)),
             psi_soil = c(-0.1, -3)) %>%
   expand.grid() %>% 
   mutate(dat = purrr::map2(.x = psi_soil, 
@@ -152,10 +152,10 @@ dat1 = list(vpd = exp(seq(log(100), log(5000), length.out = 50)),
 
 ```{r}
 tmp <- dat1 %>% 
-  select(vpd, psi_soil, gs, e) %>% 
+  select(vpd, psi_soil, gs, e, a) %>% 
   mutate(type = "With acclimation") %>% 
   rbind(dat2 %>% 
-          select(vpd, psi_soil, gs, e) %>% 
+          select(vpd, psi_soil, gs, e, a) %>% 
           mutate(type = "No acclimation")) %>% 
   melt(c("vpd", "psi_soil", "type"))
 
@@ -165,11 +165,16 @@ gg1 <- tmp %>%
   facet_wrap(facets = c("type"), scales = "fixed", nrow = 1) +
   geom_line(size = 1) +
   labs(x = "VPD", y = "Stomatal conductance") +
-  scale_color_discrete(labels = c("Dry soil", "Moist soil"), name = "") +
-  theme(axis.text.x=element_blank(),
+  scale_color_manual(labels = c("Dry soil", "Moist soil"), 
+                     values = c('#E69F00','#56B4E9'), name = "") +
+  ylim(0, NA) +
+  theme_cowplot() +
+  theme(
+        axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
         axis.text.y=element_blank(),
-        axis.ticks.y=element_blank())
+        axis.ticks.y=element_blank(),
+        legend.position = c(0.75, 0.6))
 
 gg2 <- tmp %>%
   filter(variable == "e") %>% 
@@ -177,11 +182,39 @@ gg2 <- tmp %>%
   facet_wrap(facets = c("type"), scales = "fixed", nrow = 1) +
   geom_line(size = 1) +
   labs(x = "VPD", y = "Transpiration") +
-  scale_color_discrete(labels = c("Dry soil", "Moist soil"), name = "") +
-  theme(axis.text.x=element_blank(),
+  scale_color_manual(labels = c("Dry soil", "Moist soil"), 
+                     values = c('#E69F00','#56B4E9'), name = "") +
+  ylim(0, NA) +
+  theme_cowplot() +
+  theme(
+        axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
         axis.text.y=element_blank(),
-        axis.ticks.y=element_blank())
+        axis.ticks.y=element_blank(),
+        axis.line.y = element_line(),
+        legend.position = "none")
+
+gg3 <- tmp %>%
+  filter(variable == "a") %>% 
+  ggplot(aes(x = vpd, y = value, col = factor(psi_soil), group = factor(psi_soil))) + 
+  facet_wrap(facets = c("type"), scales = "fixed", nrow = 1) +
+  geom_line(size = 1) +
+  labs(x = "VPD", y = "Assimilation") +
+  scale_color_manual(labels = c("Dry soil", "Moist soil"), 
+                     values = c('#E69F00','#56B4E9'), name = "") +
+  ylim(0, NA) +
+  theme_cowplot() +
+  theme(
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        axis.line.y = element_line(),
+        legend.position = "none")
 
 cowplot::plot_grid(gg1, gg2, nrow = 2)
+ggsave("../fig/acclimating_vpd_response.png", width = 6, height = 5)
+
+cowplot::plot_grid(gg1, gg2, gg3, nrow = 3)
+ggsave("../fig/acclimating_vpd_response_with_assim.png", width = 6, height = 7)
 ```
