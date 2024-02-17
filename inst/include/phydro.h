@@ -41,7 +41,7 @@ class ParControl{
 	FtempVcmaxJmaxMethod ftemp_vj_method = FV_kumarathunge19;
 	FtempRdMethod        ftemp_rd_method = FR_heskel16; 
 	FtempBrMethod        ftemp_br_method = FB_atkin15;
-	bool                 scale_alpha     = true;
+	bool                 scale_alpha     = false;
 };
 
 

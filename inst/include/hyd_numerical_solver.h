@@ -30,7 +30,7 @@ class PHydro_Profit{
 
 	public:
 
-	PHydro_Profit(double _psi_soil, ParCost _par_cost, ParPhotosynth _par_photosynth, ParPlant _par_plant, ParEnv _par_env) : 
+	inline PHydro_Profit(double _psi_soil, ParCost _par_cost, ParPhotosynth _par_photosynth, ParPlant _par_plant, ParEnv _par_env) : 
 		psi_soil       ( _psi_soil),
 		par_cost       ( _par_cost),
 		par_env        ( _par_env),
@@ -38,7 +38,7 @@ class PHydro_Profit{
 		par_plant      ( _par_plant) {
 	}
 
-	double value(const VectorXd &x) {
+	inline double value(const VectorXd &x) {
 		double jmax = exp(x[0]);
 		double dpsi = x[1];
 
@@ -54,7 +54,7 @@ class PHydro_Profit{
 		return -profit;
 	}
 
-    double operator()(const VectorXd& x, VectorXd& grad){
+    inline double operator()(const VectorXd& x, VectorXd& grad){
 		double f = value(x);
 		
 		for (int i=0; i<n; ++i){

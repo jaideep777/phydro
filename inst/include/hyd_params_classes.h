@@ -16,13 +16,13 @@ class ParPlant{
 	double h_canopy = 20;
 	double h_wind_measurement = 22;
 
-	ParPlant(double _conductivity, double _psi50, double _b){
+	inline ParPlant(double _conductivity, double _psi50, double _b){
 		conductivity = _conductivity;
 		psi50 = _psi50;
 		b = _b;
 	}
 
-	ParPlant(double _conductivity, double _psi50, double _b,
+	inline ParPlant(double _conductivity, double _psi50, double _b,
 	         double _tchome, double _h_canopy, double _h_wind_measurement){
 
 		conductivity = _conductivity;
@@ -34,7 +34,7 @@ class ParPlant{
 		h_wind_measurement = _h_wind_measurement;
 	}
 
-	void print(){
+	inline void print(){
 		std::cout << "ParPlant:\n";
 		std::cout << "   conductivity = " << conductivity << '\n';
 		std::cout << "   psi50 = " << psi50 << '\n';
@@ -52,7 +52,7 @@ class ParCost{
 	double alpha;
 	double gamma;
 
-	ParCost(double _a, double _g){
+	inline ParCost(double _a, double _g){
 		alpha = _a;
 		gamma = _g;
 	}

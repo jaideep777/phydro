@@ -33,7 +33,7 @@ class PHydro_Profit_Inst{
 
 	public:
 
-	PHydro_Profit_Inst(double _vcmax, double _jmax, double _psi_soil, ParCost _par_cost, ParPhotosynth _par_photosynth, ParPlant _par_plant, ParEnv _par_env) : 
+	inline PHydro_Profit_Inst(double _vcmax, double _jmax, double _psi_soil, ParCost _par_cost, ParPhotosynth _par_photosynth, ParPlant _par_plant, ParEnv _par_env) : 
 		psi_soil       ( _psi_soil),
 		vcmax          ( _vcmax),
 		jmax           ( _jmax),
@@ -43,7 +43,7 @@ class PHydro_Profit_Inst{
 		par_plant      ( _par_plant) {
 	}
 
-	double value(const VectorXd &x) {
+	inline double value(const VectorXd &x) {
 		double dpsi = x[0];
 		
 		double Q = calc_sapflux(dpsi, psi_soil, par_plant, par_env);
@@ -58,7 +58,7 @@ class PHydro_Profit_Inst{
 		return -profit;
 	}
 
-    double operator()(const VectorXd& x, VectorXd& grad){
+    inline double operator()(const VectorXd& x, VectorXd& grad){
 		double f = value(x);
 		
 		for (int i=0; i<n; ++i){

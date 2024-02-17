@@ -240,7 +240,7 @@ inline double calc_ftemp_inst_jmax(double tcleaf, double tcgrowth, double tchome
 
 // Calculate Temperature scaling (f) factor for Rd,
 // Rd = f * Rd25
-double calc_ftemp_inst_rd(double tc_leaf, FtempRdMethod method_rd_scale = FR_heskel16){//, double tc_growth = 1e20, double q10 = 2) {
+inline double calc_ftemp_inst_rd(double tc_leaf, FtempRdMethod method_rd_scale = FR_heskel16){//, double tc_growth = 1e20, double q10 = 2) {
     // Get temperature scaling for Rd:
 
     double f = 1.0; // Scaling factor for Rd
@@ -269,7 +269,7 @@ double calc_ftemp_inst_rd(double tc_leaf, FtempRdMethod method_rd_scale = FR_hes
 
 // Ratio of Rd to Vcmax at 25 degC
 // Rd25 = brd25 * Vcmax25 
-double calc_brd25(FtempBrMethod method_rd25 = FB_atkin15, double tc_growth = 25.0) {
+inline double calc_brd25(FtempBrMethod method_rd25 = FB_atkin15, double tc_growth = 25.0) {
     double rd_to_vcmax;
 
     if (method_rd25 == FB_atkin15) {

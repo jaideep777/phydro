@@ -30,7 +30,7 @@ class ParPhotosynth{
 	double fT_jmax;
 	double fT_rd;
 
-	ParPhotosynth(double _tc, double _patm, double _kphio, double _co2, double _ppfd, double _fapar, double _rdark25, double _tcgrowth, double _tchome,
+	inline ParPhotosynth(double _tc, double _patm, double _kphio, double _co2, double _ppfd, double _fapar, double _rdark25, double _tcgrowth, double _tchome,
 				  FtempVcmaxJmaxMethod _ftemp_vj_method = FV_kumarathunge19, 
 				  FtempRdMethod        _ftemp_rd_method = FR_heskel16, 
 				  FtempBrMethod        _ftemp_br_method = FB_atkin15){
@@ -54,7 +54,7 @@ class ParPhotosynth{
 
 	}
 
-	void print(){
+	inline void print(){
 		std::cout << "Par Photosynth:\n";
 		std::cout << "   fT_vcmax = " << fT_vcmax << '\n';
 		std::cout << "   fT_jmax = " << fT_jmax << '\n';
