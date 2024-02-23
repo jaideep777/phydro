@@ -26,12 +26,12 @@ int main(){
 	double vpd = 810.6;
 	double co2 = 400;
 	double ppfd = 1200;
-	double pa = calc_patm(0);
 	double kphio = 0.087;
 	double fapar = 0.99;
 	double rdark = 0.02;
 	double psi_soil = -0.4137931;
 	double elv = 0;
+	double pa = phydro::calc_patm(elv);
 	
 	ParCost        par_cost(0.118514, 1.227068);
 	ParPlant       par_plant(7.457324e-17, -1.039539, 1);
@@ -59,7 +59,7 @@ int main(){
 	for (auto psi_soil : seq(-6, 0, 20)){
 
 		phydro::PHydroResult res;
-		res = phydro::phydro_instantaneous_analytical(vcmax, jmax, tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost);
+		res = phydro::phydro_instantaneous_analytical(vcmax, jmax, tc, tc, ppfd, ppfd/2, vpd, co2, pa, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost);
 			
 		cout << setw(10) <<  psi_soil  << "\t"; cout.flush();
 		cout << setw(10) <<  res.jmax  << "\t";

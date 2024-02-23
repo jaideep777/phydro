@@ -43,7 +43,7 @@ LDFLAGS =  -g -pg
 #-Wwrite-strings \
 #-Waggregate-return -Wpadded -Wfloat-equal -Winline
 
-CPPFLAGS += -Wno-unused-variable \
+CPPFLAGS += -Wno-unused-variable -Wno-unused-parameter \
 #-Wno-unused-but-set-variable -Wno-float-conversion
 
 # libs

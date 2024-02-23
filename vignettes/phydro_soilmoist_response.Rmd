@@ -44,7 +44,7 @@ options = list(gs_method = "GS_IGF",
 ## Acclimating response
 
 ```{r}
-dat = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
+dat = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, pa, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
 ```
 
 ```{r}
@@ -63,7 +63,7 @@ ggplot(df.m, aes(y=value, x=psi_soil)) +
 ```{r}
 acc = dat %>% filter(psi_soil == 0)
 
-dat_inst = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_instantaneous_analytical(acc$vcmax25, acc$jmax25, tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
+dat_inst = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_instantaneous_analytical(acc$vcmax25, acc$jmax25, tc, tc, ppfd, netrad, vpd, co2, pa, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
 
 df.m1 <- dat_inst %>% melt("psi_soil")
 
@@ -87,7 +87,7 @@ abline(v=0, col="pink")
 ## Use approx gs calculation
 
 ```{r}
-dat_apx = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, list_modify(options, gs_method = "GS_APX2")))) %>% unnest_wider(dat)
+dat_apx = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, pa, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, list_modify(options, gs_method = "GS_APX2")))) %>% unnest_wider(dat)
 ```
 
 ```{r}
@@ -146,7 +146,7 @@ options = list(gs_method = "GS_IGF",
                ftemp_br_method = "FB_atkin15",
                scale_alpha = F)
 
-dat_pml = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
+dat_pml = tibble(psi_soil = seq(-6,0,length.out=50)) %>% mutate(dat = purrr::map(.x=psi_soil, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, pa, fapar, kphio, .x, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
 ```
 
 ```{r}
@@ -186,7 +186,7 @@ options = list(gs_method = "GS_IGF",
                ftemp_br_method = "FB_atkin15",
                scale_alpha = F)
 
-dat_pml2 = list(psi_soil = seq(-6,0,length.out=50), vwind=exp(seq(log(0.01),log(10),length.out=10))) %>% cross_df() %>% mutate(dat = purrr::map2(.x=psi_soil, .y=vwind, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, .y, par_plant, par_cost, options))) %>% unnest_wider(dat)
+dat_pml2 = list(psi_soil = seq(-6,0,length.out=50), vwind=exp(seq(log(0.01),log(10),length.out=10))) %>% cross_df() %>% mutate(dat = purrr::map2(.x=psi_soil, .y=vwind, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, pa, fapar, kphio, .x, rdark, .y, par_plant, par_cost, options))) %>% unnest_wider(dat)
 ```
 
 ```{r fig.width=9}
@@ -205,7 +205,7 @@ dat_pml2 %>% melt(c("psi_soil", "vwind")) %>%
 ```{r fig.width=9}
 dat_pml2_inst = list(psi_soil = seq(-6,0,length.out=50), vwind=exp(seq(log(0.01),log(10),length.out=10))) %>% cross_df() %>% 
   left_join(dat_pml2 %>% 
-              select(vcmax25, jmax25, psi_soil, vwind)) %>% mutate(dat = purrr::pmap(.l = list(vcmax25, jmax25, psi_soil, vwind), .f = ~rphydro_instantaneous_analytical(..1, ..2, tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, ..3, rdark, ..4, par_plant, par_cost, options))) %>% select(-vcmax25, -jmax25) %>% unnest_wider(dat)
+              select(vcmax25, jmax25, psi_soil, vwind)) %>% mutate(dat = purrr::pmap(.l = list(vcmax25, jmax25, psi_soil, vwind), .f = ~rphydro_instantaneous_analytical(..1, ..2, tc, tc, ppfd, netrad, vpd, co2, pa, fapar, kphio, ..3, rdark, ..4, par_plant, par_cost, options))) %>% select(-vcmax25, -jmax25) %>% unnest_wider(dat)
 
 dat_pml2_inst %>% melt(c("psi_soil", "vwind")) %>% 
   ggplot(aes(y=value, x=psi_soil, col=vwind, group=vwind)) + 
@@ -219,7 +219,7 @@ dat_pml2_inst %>% melt(c("psi_soil", "vwind")) %>%
 ## Test effect of canopy and measurement heights
 
 ```{r}
-dat_pml3 = list(psi_soil = seq(-6,0,length.out=50), h_canopy = seq(1,50,length.out=10)) %>% cross_df() %>% mutate(dat = purrr::map2(.x=psi_soil, .y=h_canopy, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant %>% list_modify(h_canopy = .y, h_wind_measurement = .y+10), par_cost, options))) %>% unnest_wider(dat)
+dat_pml3 = list(psi_soil = seq(-6,0,length.out=50), h_canopy = seq(1,50,length.out=10)) %>% cross_df() %>% mutate(dat = purrr::map2(.x=psi_soil, .y=h_canopy, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, pa, fapar, kphio, .x, rdark, vwind, par_plant %>% list_modify(h_canopy = .y, h_wind_measurement = .y+10), par_cost, options))) %>% unnest_wider(dat)
 
 dat_pml3 %>% melt(c("psi_soil", "h_canopy")) %>% 
   ggplot(aes(y=value, x=psi_soil, col=h_canopy, group=h_canopy)) + 
@@ -233,7 +233,7 @@ dat_pml3 %>% melt(c("psi_soil", "h_canopy")) %>%
 ## Test effect of canopy height with fixed measurement height
 
 ```{r}
-dat_pml3 = list(psi_soil = seq(-6,0,length.out=50), h_canopy = seq(1,50,length.out=10)) %>% cross_df() %>% mutate(dat = purrr::map2(.x=psi_soil, .y=h_canopy, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, elv, fapar, kphio, .x, rdark, vwind, par_plant %>% list_modify(h_canopy = .y, h_wind_measurement = 60), par_cost, options))) %>% unnest_wider(dat)
+dat_pml3 = list(psi_soil = seq(-6,0,length.out=50), h_canopy = seq(1,50,length.out=10)) %>% cross_df() %>% mutate(dat = purrr::map2(.x=psi_soil, .y=h_canopy, .f = ~rphydro_analytical(tc, tc, ppfd, netrad, vpd, co2, pa, fapar, kphio, .x, rdark, vwind, par_plant %>% list_modify(h_canopy = .y, h_wind_measurement = 60), par_cost, options))) %>% unnest_wider(dat)
 
 dat_pml3 %>% melt(c("psi_soil", "h_canopy")) %>% 
   ggplot(aes(y=value, x=psi_soil, col=h_canopy, group=h_canopy)) + 

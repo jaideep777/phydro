@@ -43,6 +43,7 @@ int main(){
 	double elv  = 0;            // m.a.s.l.
 	double fapar = 0.7;         // fractioni
 	double rdark = 0.02;
+	double pa = phydro::calc_patm(elv);
 	
 	phydro::ParCost par_cost(0.1, 1);
 	phydro::ParPlant par_plant(3e-17, -2, 2);
@@ -68,7 +69,7 @@ int main(){
 		auto t1 = std::chrono::high_resolution_clock::now();
 		phydro::PHydroResult res;
 		for (int i=0; i<1000; ++i){
-			res = phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, options);
+			res = phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, pa, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost, options);
 		}
 		auto t2 = std::chrono::high_resolution_clock::now();
 		time += (std::chrono::duration<double, std::milli> (t2 - t1)).count();

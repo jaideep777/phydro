@@ -45,9 +45,9 @@ class ParControl{
 };
 
 
-inline PHydroResult phydro_analytical(double tc, double tg, double ppfd, double netrad, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
+inline PHydroResult phydro_analytical(double tc, double tg, double ppfd, double netrad, double vpd, double co2, double pa, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
-	double pa = calc_patm(elv);
+	// double pa = calc_patm(elv);
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tg, par_plant.tchome, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd, netrad, vwind);
@@ -95,9 +95,9 @@ inline PHydroResult phydro_analytical(double tc, double tg, double ppfd, double 
 }
 
 
-inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double netrad, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
+inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double netrad, double vpd, double co2, double pa, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
-	double pa = calc_patm(elv);
+	// double pa = calc_patm(elv);
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tg, par_plant.tchome, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd, netrad, vwind);
@@ -154,9 +154,9 @@ inline PHydroResult phydro_instantaneous_analytical(double vcmax25, double jmax2
 
 namespace phydro{
 
-inline PHydroResult phydro_numerical(double tc, double tg, double ppfd, double netrad, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
+inline PHydroResult phydro_numerical(double tc, double tg, double ppfd, double netrad, double vpd, double co2, double pa, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
-	double pa = calc_patm(elv);
+	// double pa = calc_patm(elv);
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tg, par_plant.tchome, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd, netrad, vwind);
@@ -199,9 +199,9 @@ inline PHydroResult phydro_numerical(double tc, double tg, double ppfd, double n
 }
 
 
-inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double netrad, double vpd, double co2, double elv, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
+inline PHydroResult phydro_instantaneous_numerical(double vcmax25, double jmax25, double tc, double tg, double ppfd, double netrad, double vpd, double co2, double pa, double fapar, double kphio, double psi_soil, double rdark, double vwind, ParPlant par_plant, ParCost par_cost = ParCost(0.1,1), ParControl par_control = ParControl()){
 	
-	double pa = calc_patm(elv);
+	// double pa = calc_patm(elv);
 
 	ParPhotosynth par_photosynth(tc, pa, kphio, co2, ppfd, fapar, rdark, tg, par_plant.tchome, par_control.ftemp_vj_method, par_control.ftemp_rd_method, par_control.ftemp_br_method);
 	ParEnv        par_env(tc, pa, vpd, netrad, vwind);
