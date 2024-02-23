@@ -30,6 +30,7 @@ rdark = 0.015;
 tc = 25;
 vwind = 3;
 netrad = ppfd/2
+pa  = calc_patm(elv);            # m.a.s.l.
 
 par_cost = list(alpha=0.1, gamma=1);
 par_plant = list(conductivity=3e-17, psi50=-2, b=2);

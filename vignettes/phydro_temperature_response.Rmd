@@ -30,6 +30,7 @@ rdark = 0.015;
 psi_soil = 0;
 vwind = 2
 netrad = ppfd/2
+pa = calc_patm(elv)
 
 par_cost = list(alpha=0.1, gamma=1);
 par_plant = list(conductivity=3e-17, psi50=-2, b=2);

@@ -32,6 +32,7 @@ tc = 25;
 vwind = 3;
 netrad = ppfd/2
 psi_soil = -0.05
+pa = calc_patm(elv)
 
 par_cost = list(alpha=0.1, gamma=1);
 par_plant = list(conductivity=3e-17, psi50=-2, b=2);
