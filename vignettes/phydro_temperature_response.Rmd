@@ -30,6 +30,7 @@ rdark = 0.015;
 psi_soil = 0;
 vwind = 2
 netrad = ppfd/2
+pa = calc_patm(elv)
 
 par_cost = list(alpha=0.1, gamma=1);
 par_plant = list(conductivity=3e-17, psi50=-2, b=2);
@@ -46,7 +47,7 @@ options = list(gs_method = "GS_IGF",
 ## Acclimating response
 
 ```{r}
-dat = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, .x, ppfd, netrad, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
+dat = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, .x, ppfd, netrad, vpd, co2, pa, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
 ```
 
 ```{r}
@@ -65,7 +66,7 @@ ggplot(df.m, aes(y=value, x=tc)) +
 ```{r}
 acc = dat %>% filter(tc == 25)
 
-dat_inst = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_instantaneous_analytical(acc$vcmax25, acc$jmax25, .x, .x, ppfd, netrad, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
+dat_inst = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_instantaneous_analytical(acc$vcmax25, acc$jmax25, .x, .x, ppfd, netrad, vpd, co2, pa, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
 
 df.m1 <- dat_inst %>% melt("tc")
 
@@ -90,7 +91,7 @@ abline(v=25, col="pink")
 
 
 ```{r}
-dat_kattge = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, .x, ppfd, netrad, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, list_modify(options, ftemp_vj_method = "FV_kattge07") ))) %>% unnest_wider(dat)
+dat_kattge = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, .x, ppfd, netrad, vpd, co2, pa, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, list_modify(options, ftemp_vj_method = "FV_kattge07") ))) %>% unnest_wider(dat)
 ```
 
 ```{r}
@@ -118,7 +119,7 @@ cbind(dat$a, dat_kattge$a) %>% matplot(x=dat$tc, type="l", col=c("black", "cyan3
 
 
 ```{r}
-dat_leuning = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, .x, ppfd, netrad, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, list_modify(options, ftemp_vj_method = "FV_leuning02") ))) %>% unnest_wider(dat)
+dat_leuning = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, .x, ppfd, netrad, vpd, co2, pa, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, list_modify(options, ftemp_vj_method = "FV_leuning02") ))) %>% unnest_wider(dat)
 ```
 
 
@@ -138,7 +139,7 @@ options = list(gs_method = "GS_IGF",
                ftemp_br_method = "FB_atkin15",
                scale_alpha = T)
 
-dat_pml = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, .x, ppfd, netrad, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, list_modify(options, ftemp_vj_method = "FV_kattge07") ))) %>% unnest_wider(dat)
+dat_pml = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, .x, ppfd, netrad, vpd, co2, pa, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, list_modify(options, ftemp_vj_method = "FV_kattge07") ))) %>% unnest_wider(dat)
 ```
 
 ```{r}
@@ -179,7 +180,7 @@ options = list(gs_method = "GS_IGF",
                ftemp_br_method = "FB_atkin15",
                scale_alpha = F)
 
-dat_alpha = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, .x, ppfd, netrad, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, options ))) %>% unnest_wider(dat)
+dat_alpha = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_analytical(.x, .x, ppfd, netrad, vpd, co2, pa, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, options ))) %>% unnest_wider(dat)
 
 df.alpha <- dat_alpha %>% melt("tc")
 
@@ -195,7 +196,7 @@ ggplot(df.alpha, aes(y=value, x=tc)) +
 ```{r}
 acc_alpha = dat_alpha %>% filter(tc == 25)
 
-dat_inst_alpha = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_instantaneous_analytical(acc_alpha$vcmax25, acc_alpha$jmax25, .x, .x, ppfd, netrad, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
+dat_inst_alpha = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_instantaneous_analytical(acc_alpha$vcmax25, acc_alpha$jmax25, .x, .x, ppfd, netrad, vpd, co2, pa, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, options))) %>% unnest_wider(dat)
 
 df.m1_alpha <- dat_inst_alpha %>% melt("tc")
 
@@ -213,7 +214,7 @@ ggplot(df.m1_alpha, aes(y=value, x=tc)) +
 ```{r}
 acc_alpha = dat_alpha %>% filter(tc == 25)
 
-dat_inst_alpha = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_instantaneous_analytical(acc_alpha$vcmax25, acc_alpha$jmax25, .x, .x, ppfd, netrad, vpd, co2, elv, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, options %>% list_modify(scale_alpha=T)))) %>% unnest_wider(dat)
+dat_inst_alpha = tibble(tc = -5:55) %>% mutate(dat = purrr::map(.x=tc, .f = ~rphydro_instantaneous_analytical(acc_alpha$vcmax25, acc_alpha$jmax25, .x, .x, ppfd, netrad, vpd, co2, pa, fapar, kphio, psi_soil, rdark, vwind, par_plant, par_cost, options %>% list_modify(scale_alpha=T)))) %>% unnest_wider(dat)
 
 df.m1_alpha <- dat_inst_alpha %>% melt("tc")
 

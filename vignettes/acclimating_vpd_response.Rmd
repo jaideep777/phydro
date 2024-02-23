@@ -29,6 +29,7 @@ rdark = 0.015;
 tc = 25;
 vwind = 3;
 netrad = ppfd/2
+pa = calc_patm(elv)
 
 # cost parameters for the optimality model (not directly observable)
 par_cost = list(alpha = 0.1, gamma = 1)
@@ -61,7 +62,7 @@ acc2 = rphydro_analytical(tc,
                           netrad, 
                           vpd_acc, 
                           co2, 
-                          elv, 
+                          pa, 
                           fapar, 
                           kphio, 
                           0, 
@@ -84,7 +85,7 @@ dat2 = list(vpd = exp(seq(log(100), log(5000), length.out = 100 )),
                                                                   netrad, 
                                                                   .y, 
                                                                   co2, 
-                                                                  elv, 
+                                                                  pa, 
                                                                   fapar, 
                                                                   kphio, 
                                                                   .x, 
@@ -112,7 +113,7 @@ acc1 = rphydro_analytical(tc,
                           netrad, 
                           vpd_acc, 
                           co2, 
-                          elv, 
+                          pa, 
                           fapar, 
                           kphio, 
                           0, 
@@ -136,7 +137,7 @@ dat1 = list(vpd = exp(seq(log(100), log(5000), length.out = 100)),
                                                                   netrad, 
                                                                   .y, 
                                                                   co2, 
-                                                                  elv, 
+                                                                  pa, 
                                                                   fapar, 
                                                                   kphio, 
                                                                   .x, 

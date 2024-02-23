@@ -43,6 +43,7 @@ int main(){
 	double fapar = 0.7;         // fractioni
 	double rdark = 0.00;
 	double psi_soil = 0;
+	double pa = phydro::calc_patm(elv);
 
 	phydro::ParCost par_cost(0.1, 1);
 	phydro::ParPlant par_plant(3e-17, -2, 2);
@@ -61,7 +62,7 @@ int main(){
 
 	for (auto vpd : lseq(5, 5000, 50)){
 
-		auto res = phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, elv, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost);
+		auto res = phydro::phydro_analytical(tc, tc, ppfd, ppfd/2, vpd, co2, pa, fapar, kphio, psi_soil, rdark, 3.0, par_plant, par_cost);
 		
 		cout << setw(10) <<  vpd       << "\t"; cout.flush();
 		cout << setw(10) <<  res.jmax  << "\t";

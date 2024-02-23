@@ -38,7 +38,7 @@ int main(){
 	for (size_t i=0; i<x.size(); ++i){
 		double T = x[i];
 		double f = phydro::calc_ftemp_inst_rd(T, phydro::FR_heskel16); //, 25, 2);
-		// if (check(f, expected_heskel[i]) == 1) return 1;
+		if (check(f, expected_heskel[i]) == 1) return 1;
 		cout << f << " " << expected_heskel[i] << "\n";
 	}
 
@@ -48,7 +48,7 @@ int main(){
 	for (size_t i=0; i<x.size(); ++i){
 		double T = x[i];
 		double f = phydro::calc_ftemp_inst_rd(T, phydro::FR_arrhenius); //, 25, 2);
-		// if (check(f, expected_arrh[i]) == 1) return 1;
+		if (check(f, expected_arrh[i]) == 1) return 1;
 		cout << f << " " << expected_arrh[i] << "\n";
 	}
 
@@ -58,7 +58,7 @@ int main(){
 	for (size_t i=0; i<x.size(); ++i){
 		double T = x[i];
 		double f = phydro::calc_ftemp_inst_rd(T, phydro::FR_q10); //, 25, 2);
-		// if (check(f/expected_q10[i], 1) == 1) return 1;
+		if (check(f/expected_q10[i], 1) == 1) return 1;
 		cout << f << " " << expected_q10[i] << "\n";
 	}
 
